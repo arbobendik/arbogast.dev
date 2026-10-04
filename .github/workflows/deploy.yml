@@ -1,0 +1,54 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # agentic is private and never deployed, so only the public subprojects are fetched
+      - run: git submodule update --init --depth 1 projects/FlexLight
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: build FlexLight
+        working-directory: projects/FlexLight
+        run: |
+          npm install -g esbuild typescript
+          bash ./build-script
+
+      - name: assemble site
+        run: |
+          rsync -a --exclude='.*' --exclude=/agentic --exclude=/projects --exclude=/node_modules --exclude=/_site \
+            --exclude=/package.json --exclude=/package-lock.json ./ _site/
+          rsync -a projects/FlexLight/public/ _site/FlexLight/
+
+      - name: refuse to publish agent instructions or dotfiles
+        run: |
+          if find _site \( -iname AGENTS.md -o -iname CLAUDE.md -o -name '.*' \) | grep .; then exit 1; fi
+
+      - name: upload to arbogast.dev
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          # server-only content that is not tracked here is protected from --delete
+          rsync -rlptz --delete-after \
+            --filter='P /bin/' --filter='P /public/' --filter='P /backup-robots.txt' --filter='P /NeuNet/' \
+            --filter='P /FlexLight/static/objects/local/' --filter='P /FlexLight/static/textures/*/About' \
+            -e 'ssh -i ~/.ssh/deploy' _site/ nginx@arbogast.dev:./

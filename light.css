@@ -1,0 +1,29 @@
+html, #footer {
+  background-color: #bdd6dd;
+}
+
+h1, h2, p, a, li, #dsgvo{
+  color: #333;
+  text-shadow: -1vh -1vh 5vh #bdd6dd, 1vh 1vh 5vh #73858a;
+}
+
+#backgroundTone {
+  background: #c4f1ff;
+}
+
+.menuBackground {
+  background-color: #bdd6dd80;
+}
+
+.button {
+  background-color: #aaa;
+  color: #555;
+}
+
+.icons {
+  background-color: #bdd6dd;
+}
+
+#name > p {
+  color: #282828;
+}

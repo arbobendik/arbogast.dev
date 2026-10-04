@@ -1,0 +1,74 @@
+User-agent: Applebot
+Allow: /
+
+User-agent: baiduspider
+Allow: /
+
+User-agent: Baiduspider-image
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: msnbot
+Allow: /
+
+User-agent: Naverbot
+Allow: /
+
+User-agent: Pinterestbot
+Allow: /
+
+User-agent: seznambot
+Allow: /
+
+User-agent: Slurp
+Allow: /
+
+User-agent: teoma
+Allow: /
+
+User-agent: Yandex
+Allow: /
+
+User-agent: YandexImages
+Allow: /
+
+User-agent: Yeti
+Allow: /
+
+User-agent: GPTBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+User-agent: Google-Extended
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+User-agent: anthropic-ai
+Disallow: /
+
+User-agent: omgili
+Disallow: /
+
+User-agent: Bytespider
+Disallow: /
+
+User-agent: Facebot
+Disallow: /
+
+User-agent: Twitterbot
+Disallow: /
+
+User-agent: *
+Disallow: /

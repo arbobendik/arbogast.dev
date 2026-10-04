@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta name="description" contet="Independant web developer based in Zurich."/>
+      <meta charset="utf-8" name="content-type" content="text/html;charset=utf-8"/>
+      <meta name="viewport" content="width = device-width,initial-scale=1.0">
+    <link href="style.css" rel="stylesheet"/>
+    <title>WebDev - Bendik Arbogast</title>
+  </head>
+  <body>
+    <div id="background">
+      <div id="backgroundTone"></div>
+    </div>
+
+    <div id="darkMode" class="button" title="Switch between dark and light theme">
+      <img id="darkModeIcon" alt="light/dark" src="icons/sun.webp"></img>
+    </div>
+    <div id="iconContainer" class="button gitHubIcon" title="Github">
+      <a href="https://github.com/arbobendik">
+        <img class="gitHubIcon" alt="github" src="icons/github.webp"></img>
+      </a>
+    </div>
+    <div id="name">
+      <p>Bendik</p>
+      <p id="familyName">Arbogast</p>
+    </div>
+    <div id="dsgvo">
+    </div>
+    <div id="container">
+        <div class="menuBackground"></div>
+        <div id="topRow">
+          <div id="header">
+            <h1 id="mainHeader">
+              projects:
+            </h1>
+            <ul>
+              <li>
+                <a class="projectLinks" title="Ray Tracer Demo: A photorealistic light simulation demonstrated on a few examples" href="FlexLight/">Try <b>FlexLight </b>, a pathtracer built with WebGPU</a>
+              </li>
+              <li>
+                <a class="projectLinks" title="A 2048 game" href="2048/">A 2048 Game</a>
+              </li>
+              <li>
+                <a class="projectLinks" title="" href="NeuNet/">Multi Layer Perceptrons implemented in WebGL2</a>
+              </li>
+            </ul>
+          </div>
+          <div id="gallery">
+            <a class="projectLinks" id="imageLink" title="pathtracer screenshots" href="FlexLight/">
+              <img id="originalImage" alt="Pathtracer Image" src="FlexLight/static/screenshots/screen0.webp"></img>
+              <img id="imageShadow" alt="Box Shadow of Pathtracer Image" src="FlexLight/static/screenshots/screen0.webp"></img>
+            </a>
+          </div>
+        </div>
+        <div id="footer">
+          <div class="note">
+            <h2 class="noteText">whoami?</h2>
+            <p class="noteText">
+              <br> I am Bendik Arbogast a software developer
+              <br> currently studying computer science at <a href="https://ethz.ch" title="ETH Zürich website">ETH Zürich</a>.
+            </p>
+            <p class="noteText">
+              <br> In my spare time I enjoy programming and developing on my personal projects which are partially listed above.
+            </p>
+            <p class="noteText">
+              <br> As a principle to fully understand core concepts and underlying math of modern technology such as ML or Raytracing
+              and to receive the maximal learning experience I abstain from using third party frameworks or libraries in those projects.
+            </p>
+            <p class="noteText">
+              <br> Over the last years I developed a special interest in GPU accelerated workloads
+              and started projects - such as own render-engine <a href="https://github.com/arbobendik/FlexLight" title="Github">FlexLight</a>
+              - or my neural-net library <a href="https://github.com/arbobendik/web-neural-net" title="Github">NeuNet</a>
+              <br>  using glsl shaders.
+            </p>
+            
+            <p class="noteText">
+              <br> One of my favourite technologies that I also used to implement those projects is WebGL2 
+              - even if it is an old standard that hopefully will be replaced soon -
+              since it enables GPU accelerated workloads directly in the browser with ideal cross-platform support.
+            </p>
+            <p class="noteText">
+              <br> In the case that you are interested: <br> The source code of my projects can also be found on
+              <a href="https://github.com/arbobendik" title="Github">GitHub </a>.
+            </p>
+          </div>
+        </div>
+    </div>
+  </body>
+</html>

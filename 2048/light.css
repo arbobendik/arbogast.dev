@@ -1,0 +1,38 @@
+html {
+  background-color: #ddd;
+}
+
+span, #popUpMessage, #header {
+  color: #333;
+  text-shadow: -1vmin -1vmin 10vmin #EEE, 1vmin 1vmin 10vmin #777;
+}
+
+#container, #popUp, .saveTile {
+  box-shadow: -2vmin -2vmin 10vmin #eee, 2vmin 2vmin 10vmin #777;
+  background-color: #fff;
+  border: 0.4vmin solid black;
+  color: #555;
+}
+
+#topMenu {
+  box-shadow: 0 4vmin 5vmin #bbb;
+}
+
+.cell {
+  border: 0.2vmin solid black;
+}
+
+#backgroundTone, choice {
+  color: #555;
+  background: linear-gradient(135deg, #ccc 35%, #aaaa);
+}
+
+.button {
+  box-shadow: -2vmin -2vmin 5vmin #eee, 2vmin 2vmin 5vmin #777;
+  background-color: #555;
+  color: #aaa;
+}
+
+.button:hover {
+  box-shadow: -0.5vmin -0.5vmin 5vmin #eee, 0.5vmin 0.5vmin 5vmin #777;
+}

@@ -1,3 +1,11 @@
 [submodule "agentic"]
 	path = agentic
 	url = git@github.com:arbobendik/agentic.git
+[submodule "projects/FlexLight"]
+	path = projects/FlexLight
+	url = https://github.com/arbobendik/FlexLight.git
+	branch = master
+[submodule "projects/NeuNet"]
+	path = projects/NeuNet
+	url = https://github.com/arbobendik/NeuNet.git
+	branch = master

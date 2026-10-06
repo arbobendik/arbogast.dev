@@ -4,7 +4,7 @@
 [submodule "projects/FlexLight"]
 	path = projects/FlexLight
 	url = https://github.com/arbobendik/FlexLight.git
-	branch = master
+	branch = main
 [submodule "projects/NeuNet"]
 	path = projects/NeuNet
 	url = https://github.com/arbobendik/NeuNet.git

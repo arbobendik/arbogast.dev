@@ -9,3 +9,7 @@
 	path = projects/NeuNet
 	url = https://github.com/arbobendik/NeuNet.git
 	branch = master
+[submodule "projects/CV"]
+	path = projects/CV
+	url = https://github.com/arbobendik/CV.git
+	branch = main

@@ -11,6 +11,7 @@ html {
   --name: #282828;
   --shadow-dark: #73858a;
   --light: #f2fdff;
+  --surround: #000;
   /* direction shadows are cast in and position of the light, both set by onload.js */
   --sx: 1;
   --sy: 1;
@@ -246,14 +247,34 @@ li > p {
   position: fixed;
   filter: blur(10vmin);
   -webkit-filter: blur(10vmin);
+  /* reaches half a page above and below the window, so overscroll bounce never reveals its end */
+  top: -50vh;
   width: 100%;
-  height: 100vh;
+  height: 200vh;
+}
+
+/* only there to be blurred into the left and right edge of the background */
+#background::before, #background::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 30vmin;
+  height: 100%;
+  background: var(--surround);
+}
+
+#background::before {
+  right: 100%;
+}
+
+#background::after {
+  left: 100%;
 }
 
 #backgroundTone {
   position: fixed;
   width: 100%;
-  height: 100vh;
+  height: 100%;
   background: var(--tone);
 }
 

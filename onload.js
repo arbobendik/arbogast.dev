@@ -3,6 +3,9 @@
 const IMAGE_FORMAT = "webp";
 const TYPING_START = 400;
 const TYPING_INTERVAL = 100;
+// Distance from the light, as a fraction of vmin, at which shadows reach full length.
+const LIGHT_RANGE = .5;
+const LIGHT_ORBIT_PERIOD = 20000;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_FLEXLIGHT = "FlexLight/loader.html?";
@@ -45,6 +48,58 @@ function typeHeader(element) {
   observer.observe(element);
 }
 
+// The pointer is a point light, every shadow on the page is cast away from it.
+function lightScene() {
+  let root = document.documentElement;
+  let elements = document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo");
+  let x = 0;
+  let y = 0;
+  let frame = 0;
+  let following = false;
+
+  let update = () => {
+    frame = 0;
+    root.style.setProperty("--px", x + "px");
+    root.style.setProperty("--py", y + "px");
+    let range = LIGHT_RANGE * Math.min(innerWidth, innerHeight);
+    // Read all positions before writing any style to avoid a layout per element.
+    let rects = Array.from(elements, (element) => element.getBoundingClientRect());
+    elements.forEach((element, i) => {
+      let rect = rects[i];
+      let dx = (rect.left + rect.width / 2 - x) / range;
+      let dy = (rect.top + rect.height / 2 - y) / range;
+      let length = Math.max(1, Math.hypot(dx, dy));
+      element.style.setProperty("--sx", dx / length);
+      element.style.setProperty("--sy", dy / length);
+    });
+  };
+
+  let moveLight = (newX, newY) => {
+    x = newX;
+    y = newY;
+    if (!frame) frame = requestAnimationFrame(update);
+  };
+
+  // The light orbits the viewport, starting top left, until a mouse or pen takes it.
+  let orbit = (time) => {
+    if (following) return;
+    let angle = 2 * Math.PI * time / LIGHT_ORBIT_PERIOD + 1.25 * Math.PI;
+    x = innerWidth * (.5 + .4 * Math.cos(angle));
+    y = innerHeight * (.5 + .4 * Math.sin(angle));
+    update();
+    requestAnimationFrame(orbit);
+  };
+
+  window.addEventListener("pointermove", (event) => {
+    if (event.pointerType === "touch") return;
+    following = true;
+    moveLight(event.clientX, event.clientY);
+  });
+  window.addEventListener("scroll", () => moveLight(x, y));
+  window.addEventListener("resize", () => moveLight(x, y));
+  requestAnimationFrame(orbit);
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   let container = document.getElementById("container");
   let darkModeToggle = document.getElementById("darkMode");
@@ -70,6 +125,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
         Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);
+        lightScene();
       }
 
       let img = document.getElementById("originalImage");

@@ -1,106 +1,101 @@
 "use strict";
 
-const IMAGE_FORMAT = "webp"
-const HEADER_TEXT = "projects:";
+const IMAGE_FORMAT = "webp";
+const TYPING_START = 400;
+const TYPING_INTERVAL = 100;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_FLEXLIGHT = "FlexLight/loader.html?";
 const PATH_2048 = "2048/?darkMode=";
 
+// Only these pages and iframe targets are loaded, any other request shows home.
+const PAGES = ["datenschutzerklaerung", "impressum"];
+const TARGETS = ["FlexLight/", "2048/", "NeuNet/", "Demo/"];
+
+const URL_PARAMS = new URLSearchParams(location.search);
+const TARGET = URL_PARAMS.get("target");
+const PAGE = PAGES.includes(URL_PARAMS.get("page")) ? URL_PARAMS.get("page")
+  : URL_PARAMS.get("page") === "iframe" && TARGETS.includes(TARGET) ? "iframe" : "home";
+
+let darkMode = (localStorage.getItem("darkMode") ?? String(matchMedia("(prefers-color-scheme: dark)").matches)) === "true";
+// Set page and theme before the dom is loaded to avoid flashing the wrong content or colors.
+document.documentElement.dataset.page = PAGE;
+document.documentElement.dataset.theme = darkMode ? "dark" : "light";
+
 async function fetchAsText(url) {
   return await (await fetch(url)).text();
 }
-// Do redirect before dom loading.
-let urlParams = new URLSearchParams(location.search);
-let page = urlParams.get("page");
-if (page === null) location.search = "?page=home";
+
+// Type the header as soon as it is scrolled into view.
+function typeHeader(element) {
+  let header = element.textContent;
+  element.ariaLabel = header;
+  element.textContent = "";
+  let observer = new IntersectionObserver((entries) => {
+    if (!entries[0].isIntersecting) return;
+    observer.disconnect();
+    for (let i = 0; i < header.length; i++) {
+      setTimeout(() => {
+        element.textContent += "_";
+      }, TYPING_START + TYPING_INTERVAL * i);
+      setTimeout(() => {
+        element.textContent = header.slice(0, i + 1);
+      }, TYPING_START + TYPING_INTERVAL * i + 50 + Math.random() * 50);
+    }
+  });
+  observer.observe(element);
+}
 
 window.addEventListener("DOMContentLoaded", async () => {
   let container = document.getElementById("container");
-  if (page !== "iframe") (async () => container.innerHTML = await fetchAsText(page + ".html"))();
-  // let backgroundContainer = document.getElementById("background");
-  let dsgvo = document.getElementById("dsgvo");
   let darkModeToggle = document.getElementById("darkMode");
-  let name = document.getElementById("name");
-
-  document.body.style.height = window.innerHeight;
-  // createBackground(backgroundContainer);
 
   let updateStyle = () => {
-    localStorage.setItem("darkMode", darkModeToggle.value);
-    darkModeToggle.firstElementChild.src = darkModeToggle.value ? "icons/sun." + IMAGE_FORMAT : "icons/moon." + IMAGE_FORMAT;
-    link.href = darkModeToggle.value ? "dark.css" : "light.css";
+    darkModeToggle.firstElementChild.src = darkMode ? "icons/sun." + IMAGE_FORMAT : "icons/moon." + IMAGE_FORMAT;
+    document.documentElement.dataset.theme = darkMode ? "dark" : "light";
   };
-
-  let link = document.createElement("link");
-  link.rel = "stylesheet";
-  darkModeToggle.value = (localStorage.getItem("darkMode") ?? "false") === "true";
-  document.head.appendChild(link);
 
   updateStyle();
 
-  darkModeToggle.addEventListener("pointerdown", (e) => {
-    darkModeToggle.value = !darkModeToggle.value;
+  darkModeToggle.addEventListener("click", () => {
+    darkMode = !darkMode;
+    localStorage.setItem("darkMode", darkMode);
     updateStyle();
-    e.preventDefault();
   });
 
-  ["datenschutzerklaerung", "impressum"].forEach((item, i) => {
-    let element = document.createElement("a");
-		element.href = "?page=" + item;
-    element.innerHTML = item.charAt(0).toUpperCase() + item.slice(1);
-		element.style.marginRight = "4px";
-    dsgvo.appendChild(element);
-  });
-
-  name.addEventListener("click", () => {
-    location.search = "?page=home";
-  });
-
-  switch (page) {
+  switch (PAGE) {
     case "home":
-      setTimeout(() => {
-        Array.from(document.getElementsByClassName("projectLinks")).forEach((item, i) => {
-          item.href = "?page=iframe&target=" + item.getAttribute("value");
-        });
+      Array.from(document.getElementsByClassName("projectLinks")).forEach((item) => {
+        item.href = "?page=iframe&target=" + item.getAttribute("href");
+      });
 
-				let mainHeader = document.getElementById("mainHeader");
-				let header = HEADER_TEXT;
-				let startTime = 400;
-				for (let i = 0; i < header.length; i++) {
-					setTimeout(() => {
-						mainHeader.innerHTML += "_";
-					}, startTime + 100 * i);
-					setTimeout(() => {
-						mainHeader.innerHTML = header.slice(0, i + 1);
-					}, startTime + 100 * i + 50 + Math.random() * 50);
-				}
+      if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);
+      }
 
-        let img = document.getElementById("originalImage");
-        let shadow = document.getElementById("imageShadow");
+      let img = document.getElementById("originalImage");
+      let shadow = document.getElementById("imageShadow");
 
-        let screenNum = Math.floor(Math.random() * 5);
+      let screenNum = Math.floor(Math.random() * 5);
 
-        let updateImage = () => {
-          let src = PATH_SCREENSHOT + screenNum % 5 + "." + IMAGE_FORMAT;
-          img.src = src;
-          shadow.src = src;
-          screenNum++;
-        };
+      let updateImage = () => {
+        let src = PATH_SCREENSHOT + screenNum % 5 + "." + IMAGE_FORMAT;
+        img.src = src;
+        shadow.src = src;
+        screenNum++;
+      };
 
-        img.addEventListener("pointerover", updateImage);
-        updateImage();
-      }, 500);
-    	break;
+      img.addEventListener("pointerover", updateImage);
+      updateImage();
+      break;
 
     case "iframe":
       let iframe = document.createElement("iframe");
 
-
-      switch (urlParams.get('target')) {
+      switch (TARGET) {
         case 'FlexLight/':
           let source = PATH_FLEXLIGHT
-          for(const [key, value] of urlParams.entries()) source += key + '=' + value + '&';
+          for(const [key, value] of URL_PARAMS.entries()) source += key + '=' + value + '&';
           iframe.src = source;
 
           let ignoreInitial = true;
@@ -110,8 +105,8 @@ window.addEventListener("DOMContentLoaded", async () => {
               ignoreInitial = false;
             } else {
               let iframeUrlParams = new URLSearchParams(iframe.contentWindow.location.search);
-              for(const [key, value] of iframeUrlParams.entries()) urlParams.set(key, value);
-              location.search = urlParams.toString();
+              for(const [key, value] of iframeUrlParams.entries()) URL_PARAMS.set(key, value);
+              location.search = URL_PARAMS.toString();
             }
           });
           break;
@@ -120,20 +115,23 @@ window.addEventListener("DOMContentLoaded", async () => {
             let setDarkMode2048 = () => {
               let iframeUrlParams = new URLSearchParams(iframe.contentWindow.location.search);
               let page = iframeUrlParams.get("page") ?? "2048";
-              iframe.src = PATH_2048 + darkModeToggle.value + "&page=" + page;
+              iframe.src = PATH_2048 + darkMode + "&page=" + page;
             };
-            darkModeToggle.addEventListener("pointerdown", setDarkMode2048);
+            darkModeToggle.addEventListener("click", setDarkMode2048);
             setDarkMode2048();
           }, {once: true});
           break;
         default:
-          iframe.src = urlParams.get("target");
+          iframe.src = TARGET;
           break;
       }
       container.appendChild(iframe);
       // Focus iframe to directly enable event listeners
       iframe.contentWindow.focus();
       break;
+
+    default:
+      container.innerHTML = await fetchAsText(PAGE + ".html");
+      break;
   }
 });
-

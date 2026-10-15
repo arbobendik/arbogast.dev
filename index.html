@@ -1,36 +1,127 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en" data-page="home">
   <head>
-    <meta name="description" contet="Independant web developer based in Zurich."/>
-      <meta charset="utf-8" name="content-type" content="text/html;charset=utf-8"/>
-      <meta name="viewport" content="width = device-width,initial-scale=1.0">
-    <noscript>
-      <meta http-equiv="refresh" content="0, noscript.html"/>
-    </noscript>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+    <meta name="description" content="Bendik Arbogast, software developer and computer science student at ETH Zürich. GPU projects, path tracing and résumé."/>
     <script src="onload.js"></script>
     <link href="style.css" rel="stylesheet"/>
-    <title>WebDev - Bendik Arbogast</title>
+    <title>Bendik Arbogast - Software Developer</title>
   </head>
   <body>
     <div id="background">
       <div id="backgroundTone"></div>
     </div>
 
-    <div id="darkMode" class="button" title="Switch between dark and light theme">
-      <img id="darkModeIcon" alt="light/dark" src="icons/sun.webp"></img>
-    </div>
-    <div id="iconContainer" class="button gitHubIcon" title="Github">
-      <a href="https://github.com/arbobendik">
-        <img class="gitHubIcon" alt="github" src="icons/github.webp"></img>
-      </a>
-    </div>
-    <div id="name">
+    <button id="darkMode" class="button" title="Switch between dark and light theme">
+      <img id="darkModeIcon" alt="light/dark" src="icons/moon.webp"/>
+    </button>
+    <a id="iconContainer" class="button gitHubIcon" title="GitHub" href="https://github.com/arbobendik">
+      <img class="gitHubIcon" alt="GitHub" src="icons/github.webp"/>
+    </a>
+    <a id="name" title="Home" href=".">
       <p>Bendik</p>
       <p id="familyName">Arbogast</p>
-    </div>
+    </a>
+    <nav id="nav">
+      <a href="#projects">projects</a>
+      <a href="#whoami">whoami</a>
+      <a href="#resume">résumé</a>
+    </nav>
     <div id="dsgvo">
+      <a href="?page=datenschutzerklaerung">Datenschutzerklärung</a>
+      <a href="?page=impressum">Impressum</a>
     </div>
     <div id="container">
+      <div id="home">
+        <div class="menuBackground"></div>
+        <section id="projects" class="row">
+          <div class="header">
+            <h1 class="mainHeader typed">projects:</h1>
+            <ul>
+              <li>
+                <a class="projectLinks" title="Path tracer demo: a photorealistic light simulation demonstrated on a few example scenes" href="FlexLight/">Try <b>FlexLight</b>, a path tracer built with WebGPU</a>
+                <p>
+                  Written from scratch in TypeScript, with BVH acceleration, physically based materials and ReSTIR PT Enhanced.
+                  <a href="https://github.com/arbobendik/FlexLight" title="FlexLight on GitHub">Source</a>
+                </p>
+              </li>
+              <li>
+                <a class="projectLinks" title="Benchmark of the neural net library on CPU and GPU" href="NeuNet/">Multilayer perceptrons implemented in WebGL2</a>
+                <p>
+                  NeuNet, a small handmade neural net library that trains on the GPU.
+                  <a href="https://github.com/arbobendik/NeuNet" title="NeuNet on GitHub">Source</a>
+                </p>
+              </li>
+              <li>
+                <a class="projectLinks" title="A 2048 game" href="2048/">A 2048 game</a>
+                <p>With custom board sizes, undo and save games.</p>
+              </li>
+            </ul>
+          </div>
+          <div class="gallery">
+            <a class="projectLinks glow" title="Path tracer screenshots" href="FlexLight/">
+              <img id="originalImage" alt="Scene rendered with FlexLight" src="FlexLight/static/screenshots/screen0.webp"/>
+              <img id="imageShadow" class="shadow" alt="" src="FlexLight/static/screenshots/screen0.webp"/>
+            </a>
+          </div>
+        </section>
+        <section id="whoami">
+          <div class="note">
+            <h2 class="typed">whoami?</h2>
+            <p>
+              I am Bendik Arbogast, a software developer
+              pursuing a master's degree in computer science at <a href="https://ethz.ch" title="ETH Zürich website">ETH Zürich</a>.
+            </p>
+            <p>
+              Over the last years I developed a special interest in GPU accelerated workloads, mostly computer graphics and machine learning.
+              It started with personal projects such as my render engine <a href="https://github.com/arbobendik/FlexLight" title="FlexLight on GitHub">FlexLight</a>
+              and my neural net library <a href="https://github.com/arbobendik/NeuNet" title="NeuNet on GitHub">NeuNet</a>, which are listed above.
+            </p>
+            <p>
+              As a principle, to fully understand the core concepts and the underlying math of technologies such as path tracing or ML,
+              I abstain from using third party frameworks or libraries in those projects.
+            </p>
+            <p>
+              Most of them run directly in the browser. WebGPU, and WebGL2 before it,
+              enable GPU accelerated workloads with ideal cross-platform support.
+            </p>
+            <p>
+              For my bachelor thesis at Disney Research I developed a PyTorch framework for gradient-based pose optimization
+              through a frozen RenderFormer. In 2026 I worked as a software development intern
+              in the graphics engine team of the Esri R&amp;D Center Zurich.
+            </p>
+            <p>
+              Besides my studies I build web and automation solutions for clients as Arbogast Solutions.
+            </p>
+          </div>
+        </section>
+        <section id="resume" class="row">
+          <div class="header">
+            <h2 class="mainHeader typed">résumé:</h2>
+            <ul>
+              <li>
+                <a title="Résumé as PDF" href="resume.pdf">Read my <b>résumé</b> as PDF</a>
+              </li>
+              <li>
+                <a title="LinkedIn" href="https://www.linkedin.com/in/bendik-arbogast">Connect on LinkedIn</a>
+              </li>
+              <li>
+                <a title="GitHub" href="https://github.com/arbobendik">Browse my code on GitHub</a>
+              </li>
+              <li>
+                <a title="E-Mail" href="mailto:bendik@arbogast.dev">Write to bendik@arbogast.dev</a>
+              </li>
+            </ul>
+          </div>
+          <div class="gallery sheet">
+            <a class="glow" title="Résumé as PDF" href="resume.pdf">
+              <img alt="Résumé of Bendik Arbogast" src="resume.jpg"/>
+              <img class="shadow" alt="" src="resume.jpg"/>
+            </a>
+          </div>
+        </section>
+      </div>
     </div>
   </body>
 </html>

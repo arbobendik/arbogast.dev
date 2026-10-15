@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # agentic is private and never deployed, so only the public subprojects are fetched
-      - run: git submodule update --init --depth 1 projects/FlexLight projects/NeuNet
+      - run: git submodule update --init --depth 1 projects/FlexLight
 
       - uses: actions/setup-node@v7
         with:
@@ -33,7 +33,6 @@ jobs:
           rsync -a --exclude='.*' --exclude=/agentic --exclude=/projects --exclude=/node_modules --exclude=/_site \
             --exclude=/package.json --exclude=/package-lock.json ./ _site/
           rsync -a projects/FlexLight/public/ _site/FlexLight/
-          rsync -a --exclude='.*' projects/NeuNet/ _site/NeuNet/
 
       - name: refuse to publish agent instructions or dotfiles
         run: |

@@ -12,7 +12,7 @@ const PATH_FLEXLIGHT = "FlexLight/loader.html?";
 
 // Only these pages and iframe targets are loaded, any other request shows home.
 const PAGES = ["datenschutzerklaerung", "impressum"];
-const TARGETS = ["FlexLight/", "NeuNet/", "Demo/"];
+const TARGETS = ["FlexLight/"];
 
 const URL_PARAMS = new URLSearchParams(location.search);
 const TARGET = URL_PARAMS.get("target");

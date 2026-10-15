@@ -284,13 +284,8 @@ body::after {
   content: "";
   z-index: -1;
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 120vmin;
-  height: 120vmin;
-  margin: -60vmin 0 0 -60vmin;
-  background: radial-gradient(closest-side, var(--light), transparent);
-  transform: translate(var(--px), var(--py));
+  inset: 0;
+  background: radial-gradient(circle 60vmin at var(--px) var(--py), var(--light), transparent);
   pointer-events: none;
 }
 

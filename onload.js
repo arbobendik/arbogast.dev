@@ -6,11 +6,10 @@ const TYPING_INTERVAL = 100;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_FLEXLIGHT = "FlexLight/loader.html?";
-const PATH_2048 = "2048/?darkMode=";
 
 // Only these pages and iframe targets are loaded, any other request shows home.
 const PAGES = ["datenschutzerklaerung", "impressum"];
-const TARGETS = ["FlexLight/", "2048/", "NeuNet/", "Demo/"];
+const TARGETS = ["FlexLight/", "NeuNet/", "Demo/"];
 
 const URL_PARAMS = new URLSearchParams(location.search);
 const TARGET = URL_PARAMS.get("target");
@@ -109,17 +108,6 @@ window.addEventListener("DOMContentLoaded", async () => {
               location.search = URL_PARAMS.toString();
             }
           });
-          break;
-        case "2048/":
-          iframe.addEventListener("load", () => {
-            let setDarkMode2048 = () => {
-              let iframeUrlParams = new URLSearchParams(iframe.contentWindow.location.search);
-              let page = iframeUrlParams.get("page") ?? "2048";
-              iframe.src = PATH_2048 + darkMode + "&page=" + page;
-            };
-            darkModeToggle.addEventListener("click", setDarkMode2048);
-            setDarkMode2048();
-          }, {once: true});
           break;
         default:
           iframe.src = TARGET;

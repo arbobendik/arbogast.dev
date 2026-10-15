@@ -95,6 +95,11 @@ ul {
   padding-left: 2.5rem;
 }
 
+#resume ul {
+  list-style: none;
+  padding-left: 0;
+}
+
 li > a {
   transition: all .3s ease-in-out;
   font-size: 1.5rem;

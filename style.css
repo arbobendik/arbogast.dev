@@ -149,7 +149,7 @@ li > p {
 .glow > .shadow {
   z-index: -1;
   position: absolute;
-  top: .35rem;
+  top: 0;
   left: 0;
   filter: blur(3vmin);
 }
@@ -202,12 +202,13 @@ li > p {
 }
 
 #nav {
-  right: 1.5rem;
+  right: 3rem;
   line-height: 3rem;
 }
 
 #nav > a {
   margin-left: 1rem;
+  text-decoration: none;
 }
 
 .button {
@@ -300,9 +301,6 @@ body::after {
   right: 0;
   padding: .5rem 1rem;
   font-size: .75rem;
-  background-color: var(--menu);
-  backdrop-filter: blur(3vmin);
-  -webkit-backdrop-filter: blur(3vmin);
 }
 
 #dsgvoContent {

@@ -306,7 +306,7 @@ body::after {
   text-align: left;
 }
 
-@media (max-width: 40rem) {
+@media (max-width: 40rem), (pointer: coarse) {
   #nav {
     display: none;
   }

@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@v7
 
       # agentic is private and never deployed, so only the public subprojects are fetched
-      - run: git submodule update --init --depth 1 projects/FlexLight projects/NeuNet projects/CV
+      - run: git submodule update --init --depth 1 projects/FlexLight projects/NeuNet
 
       - uses: actions/setup-node@v7
         with:
@@ -28,22 +28,12 @@ jobs:
           npm install -g esbuild typescript
           bash ./build-script
 
-      - name: build resume
-        working-directory: projects/CV
-        env:
-          # pins the font hinting the one-page layout was tuned with
-          FONTCONFIG_FILE: ${{ github.workspace }}/projects/CV/.github/fonts.conf
-        run: |
-          sudo apt-get update && sudo apt-get install -y poppler-utils fonts-liberation
-          python3 generate_pdf.py --no-sandbox
-
       - name: assemble site
         run: |
           rsync -a --exclude='.*' --exclude=/agentic --exclude=/projects --exclude=/node_modules --exclude=/_site \
             --exclude=/package.json --exclude=/package-lock.json ./ _site/
           rsync -a projects/FlexLight/public/ _site/FlexLight/
           rsync -a --exclude='.*' projects/NeuNet/ _site/NeuNet/
-          cp projects/CV/resume.pdf _site/resume.pdf
 
       - name: refuse to publish agent instructions or dotfiles
         run: |

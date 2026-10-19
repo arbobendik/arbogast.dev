@@ -25,7 +25,7 @@ jobs:
       - name: build FlexLight
         working-directory: projects/FlexLight
         run: |
-          npm install -g esbuild typescript
+          npm install -g esbuild@0.28.2 typescript@6.0.3
           bash ./build-script
 
       - name: assemble site
@@ -41,7 +41,7 @@ jobs:
       - name: upload to arbogast.dev
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
-          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
           install -m 700 -d ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy

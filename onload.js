@@ -176,6 +176,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     default:
       container.innerHTML = await fetchAsText(PAGE + ".html");
+      document.title = "Bendik Arbogast - " + container.querySelector("strong").textContent;
       break;
   }
 });

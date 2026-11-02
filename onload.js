@@ -6,8 +6,12 @@ const TYPING_INTERVAL = 100;
 // Distance from the light, as a fraction of vmin, at which shadows reach full length.
 const LIGHT_RANGE = .5;
 const LIGHT_ORBIT_PERIOD = 20000;
+const LIGHT_ORBIT_FRAME_TIME = 33;
+// Shadows only repaint when their direction crosses one of these steps per unit, too small to see.
+const SHADOW_STEPS = 8;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
+const PATH_GLOW = "images/glow/screen";
 const PATH_FLEXLIGHT = "FlexLight/loader.html?";
 
 // Only these pages and iframe targets are loaded, any other request shows home.
@@ -50,27 +54,28 @@ function typeHeader(element) {
 
 // The pointer is a point light, every shadow on the page is cast away from it.
 function lightScene() {
-  let root = document.documentElement;
+  let light = document.getElementById("light");
   let elements = document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo");
   let x = 0;
   let y = 0;
   let frame = 0;
   let following = false;
+  let lastOrbitUpdate = 0;
 
   let update = () => {
     frame = 0;
-    root.style.setProperty("--px", x + "px");
-    root.style.setProperty("--py", y + "px");
+    light.style.transform = "translate(" + x + "px, " + y + "px)";
     let range = LIGHT_RANGE * Math.min(innerWidth, innerHeight);
     // Read all positions before writing any style to avoid a layout per element.
     let rects = Array.from(elements, (element) => element.getBoundingClientRect());
     elements.forEach((element, i) => {
       let rect = rects[i];
+      if (rect.bottom < 0 || rect.top > innerHeight) return;
       let dx = (rect.left + rect.width / 2 - x) / range;
       let dy = (rect.top + rect.height / 2 - y) / range;
       let length = Math.max(1, Math.hypot(dx, dy));
-      element.style.setProperty("--sx", dx / length);
-      element.style.setProperty("--sy", dy / length);
+      element.style.setProperty("--sx", Math.round(dx / length * SHADOW_STEPS) / SHADOW_STEPS);
+      element.style.setProperty("--sy", Math.round(dy / length * SHADOW_STEPS) / SHADOW_STEPS);
     });
   };
 
@@ -83,11 +88,13 @@ function lightScene() {
   // The light orbits the viewport, starting top left, until a mouse or pen takes it.
   let orbit = (time) => {
     if (following) return;
+    requestAnimationFrame(orbit);
+    if (time - lastOrbitUpdate < LIGHT_ORBIT_FRAME_TIME) return;
+    lastOrbitUpdate = time;
     let angle = 2 * Math.PI * time / LIGHT_ORBIT_PERIOD + 1.25 * Math.PI;
     x = innerWidth * (.5 + .4 * Math.cos(angle));
     y = innerHeight * (.5 + .4 * Math.sin(angle));
     update();
-    requestAnimationFrame(orbit);
   };
 
   window.addEventListener("pointermove", (event) => {
@@ -134,9 +141,8 @@ window.addEventListener("DOMContentLoaded", async () => {
       let screenNum = Math.floor(Math.random() * 5);
 
       let updateImage = () => {
-        let src = PATH_SCREENSHOT + screenNum % 5 + "." + IMAGE_FORMAT;
-        img.src = src;
-        shadow.src = src;
+        img.src = PATH_SCREENSHOT + screenNum % 5 + "." + IMAGE_FORMAT;
+        shadow.src = PATH_GLOW + screenNum % 5 + "." + IMAGE_FORMAT;
         screenNum++;
       };
 

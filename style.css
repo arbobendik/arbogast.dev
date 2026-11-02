@@ -1,6 +1,7 @@
 @font-face {
   font-family: "Roboto";
-  src: local("Roboto"), url("Roboto.ttf") format("truetype");
+  src: local("Roboto"), url("Roboto.woff2") format("woff2");
+  font-display: swap;
 }
 
 html {
@@ -11,12 +12,11 @@ html {
   --name: #282828;
   --shadow-dark: #73858a;
   --light: #f2fdff;
-  --surround: #000;
-  /* direction shadows are cast in and position of the light, both set by onload.js */
+  /* how far the page edge darkens, the falloff of a 10vmin gaussian blur */
+  --edge: #00000080 0, #0000004f 5vmin, #00000029 10vmin, #00000012 15vmin, #00000005 20vmin, #0000 25vmin;
+  /* direction shadows are cast in, set by onload.js */
   --sx: 1;
   --sy: 1;
-  --px: 0px;
-  --py: 0px;
   /* every rem based size scales with the viewport height */
   font-size: clamp(14px, 2vh, 50px);
   background-color: var(--base);
@@ -108,7 +108,7 @@ ul {
 }
 
 li > a {
-  transition: all .3s ease-in-out;
+  transition: color .3s ease-in-out;
   font-size: 1.5rem;
 }
 
@@ -146,12 +146,13 @@ li > p {
   transform: scale(1.02);
 }
 
+/* pre-blurred, with 21% of transparent margin per side for the glow to fade out in */
 .glow > .shadow {
   z-index: -1;
   position: absolute;
-  top: 0;
-  left: 0;
-  filter: blur(3vmin);
+  top: -21%;
+  left: -21%;
+  width: 142%;
 }
 
 .menuBackground {
@@ -164,6 +165,11 @@ li > p {
   background-color: var(--menu);
   backdrop-filter: blur(3vmin);
   -webkit-backdrop-filter: blur(3vmin);
+}
+
+/* the glows would otherwise make narrow windows scroll sideways */
+#home {
+  overflow-x: clip;
 }
 
 #whoami {
@@ -223,7 +229,6 @@ li > p {
   cursor: pointer;
   background-color: #aaa;
   box-shadow: calc(var(--sx) * .4rem) calc(var(--sy) * .4rem) 1rem var(--shadow-dark);
-  transition: all .3s ease-in-out;
 }
 
 #darkMode {
@@ -246,47 +251,22 @@ li > p {
 #background {
   z-index: -1;
   position: fixed;
-  filter: blur(10vmin);
-  -webkit-filter: blur(10vmin);
   /* reaches half a page above and below the window, so overscroll bounce never reveals its end */
   top: -50vh;
   width: 100%;
   height: 200vh;
+  background: linear-gradient(to right, var(--edge)), linear-gradient(to left, var(--edge)), var(--tone);
 }
 
-/* only there to be blurred into the left and right edge of the background */
-#background::before, #background::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  width: 30vmin;
-  height: 100%;
-  background: var(--surround);
-}
-
-#background::before {
-  right: 100%;
-}
-
-#background::after {
-  left: 100%;
-}
-
-#backgroundTone {
+/* the light, centered on the top left corner and moved by onload.js, so moving it never repaints */
+#light {
   position: fixed;
-  width: 100%;
-  height: 100%;
-  background: var(--tone);
-}
-
-/* the light, above the blurred background tone and below the content */
-body::after {
-  content: "";
-  z-index: -1;
-  position: fixed;
-  inset: 0;
-  background: radial-gradient(circle 60vmin at var(--px) var(--py), var(--light), transparent);
-  pointer-events: none;
+  top: -60vmin;
+  left: -60vmin;
+  width: 120vmin;
+  height: 120vmin;
+  background: radial-gradient(circle closest-side, var(--light), transparent);
+  will-change: transform;
 }
 
 #dsgvo {

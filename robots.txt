@@ -72,3 +72,5 @@ Disallow: /
 
 User-agent: *
 Disallow: /
+
+Sitemap: https://arbogast.dev/sitemap.xml

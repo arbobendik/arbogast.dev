@@ -149,6 +149,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       switch (TARGET) {
         case 'FlexLight/':
+          document.title = "Bendik Arbogast - FlexLight";
           let source = PATH_FLEXLIGHT
           for(const [key, value] of URL_PARAMS.entries()) source += key + '=' + value + '&';
           iframe.src = source;

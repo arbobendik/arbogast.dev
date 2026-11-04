@@ -11,6 +11,10 @@ const SHADOW_STEPS = 8;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_GLOW = "images/glow/screen";
+
+// Kept apart so the address only exists in the page after a click, out of reach of scrapers reading the source.
+const MAIL_PARTS = ["bendik", "arbogast.dev"];
+const MAIL_SUBJECT = "?subject=Inquiry%20to%20Arbogast%20Solutions";
 const PATH_FLEXLIGHT = "FlexLight/loader.html?";
 
 // Only these pages and iframe targets are loaded, any other request shows home.
@@ -125,6 +129,13 @@ window.addEventListener("DOMContentLoaded", async () => {
       Array.from(document.getElementsByClassName("projectLinks")).forEach((item) => {
         item.href = "?page=iframe&target=" + item.getAttribute("href");
       });
+
+      // Runs before the browser follows the link, so this same click already opens the mail app.
+      document.getElementById("mail").addEventListener("click", (event) => {
+        let address = MAIL_PARTS.join("@");
+        event.currentTarget.href = "mailto:" + address + MAIL_SUBJECT;
+        event.currentTarget.textContent = address;
+      }, { once: true });
 
       if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
         Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);

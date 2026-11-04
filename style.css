@@ -163,6 +163,31 @@ li > a {
   padding-top: 7.5rem;
 }
 
+/* a pseudo element, because typing a header replaces its content */
+.webIcon::before, .blenderIcon::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin-right: .4em;
+  vertical-align: -.12em;
+}
+
+.webIcon::before {
+  background-color: #000;
+  mask: url("icons/globe.svg") center / contain no-repeat;
+  -webkit-mask: url("icons/globe.svg") center / contain no-repeat;
+}
+
+/* black would disappear on the dark theme's background */
+html[data-theme="dark"] .webIcon::before {
+  background-color: var(--name);
+}
+
+.blenderIcon::before {
+  background: url("icons/blender.svg") center / contain no-repeat;
+}
+
 #links {
   justify-content: center;
   padding-left: 0;

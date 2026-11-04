@@ -133,8 +133,8 @@ li > a {
   left: 0;
   width: 100%;
   background-color: var(--menu);
-  backdrop-filter: blur(3vmin);
-  -webkit-backdrop-filter: blur(3vmin);
+  backdrop-filter: blur(1.5vmin);
+  -webkit-backdrop-filter: blur(1.5vmin);
 }
 
 /* the glows would otherwise make narrow windows scroll sideways */

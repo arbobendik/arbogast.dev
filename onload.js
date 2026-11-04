@@ -6,7 +6,6 @@ const TYPING_INTERVAL = 100;
 // Distance from the light, as a fraction of vmin, at which shadows reach full length.
 const LIGHT_RANGE = .5;
 const LIGHT_ORBIT_PERIOD = 20000;
-const LIGHT_ORBIT_FRAME_TIME = 33;
 // Shadows only repaint when their direction crosses one of these steps per unit, too small to see.
 const SHADOW_STEPS = 8;
 
@@ -60,7 +59,6 @@ function lightScene() {
   let y = 0;
   let frame = 0;
   let following = false;
-  let lastOrbitUpdate = 0;
 
   let update = () => {
     frame = 0;
@@ -88,13 +86,11 @@ function lightScene() {
   // The light orbits the viewport, starting top left, until a mouse or pen takes it.
   let orbit = (time) => {
     if (following) return;
-    requestAnimationFrame(orbit);
-    if (time - lastOrbitUpdate < LIGHT_ORBIT_FRAME_TIME) return;
-    lastOrbitUpdate = time;
     let angle = 2 * Math.PI * time / LIGHT_ORBIT_PERIOD + 1.25 * Math.PI;
     x = innerWidth * (.5 + .4 * Math.cos(angle));
     y = innerHeight * (.5 + .4 * Math.sin(angle));
     update();
+    requestAnimationFrame(orbit);
   };
 
   window.addEventListener("pointermove", (event) => {

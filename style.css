@@ -56,7 +56,8 @@ h1, h2, p, a, li, #dsgvo {
     calc(var(--sx) * .5rem) calc(var(--sy) * .5rem) 2.5rem var(--shadow-dark);
 }
 
-h2 {
+h1, h2 {
+  font-size: 1.5em;
   min-height: 1.2em;
 }
 
@@ -74,46 +75,15 @@ html:not([data-page="home"]) #home, html:not([data-page="home"]) #nav, html:not(
   display: none;
 }
 
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 2.5rem;
-  padding: 7.5rem 5vw 5rem 5vw;
-}
-
-.header {
-  text-align: left;
-  max-width: 80vmin;
-  width: calc(min(80vw, 70vh) - 2vh);
-}
-
-.mainHeader {
-  font-size: 14vmin;
-  min-height: 16vmin;
-  font-weight: 700;
-  letter-spacing: .7vh;
-  margin: 5vh 0 5vh 0;
-}
-
 ul {
   margin: 0;
-  padding-left: 2.5rem;
-}
-
-#resume ul {
-  list-style: none;
   padding-left: 0;
+  list-style: none;
 }
 
 li > a {
   transition: color .3s ease-in-out;
   font-size: 1.5rem;
-}
-
-li > p {
-  margin: .25rem 0 1rem 0;
 }
 
 .gallery {
@@ -172,15 +142,61 @@ li > p {
   overflow-x: clip;
 }
 
-#whoami {
+/* the text alternates between a left and a right hand column, every other section sits on a band */
+.subsection {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
   box-sizing: border-box;
-  padding: max(5vh, min(10vh, 30vh - 20vw)) 10% 10vh calc(90% - max(80vmin, 45%));
+  padding: max(5vh, min(10vh, 30vh - 20vw)) 2.5% 10vh 10%;
   min-height: 40vmin;
+}
+
+.subsection:nth-of-type(even) {
+  flex-direction: row-reverse;
+  padding-left: 2.5%;
+  padding-right: 10%;
   background-color: var(--menu);
 }
 
+#flexlight {
+  padding-top: 7.5rem;
+}
+
+#links {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+#links > .note {
+  width: auto;
+}
+
 .note {
+  flex: none;
+  width: max(80vmin, 45vw);
   text-align: left;
+}
+
+.subsection > .gallery {
+  flex: 1 1 20rem;
+  max-width: min(35rem, 80vmin);
+}
+
+/* too narrow for two columns, everything follows in one centered column */
+@media (max-width: 62.5rem), (max-aspect-ratio: 143/100) {
+  .subsection, .subsection:nth-of-type(even) {
+    flex-direction: column;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .subsection > .gallery {
+    flex: none;
+    width: max(80vmin, 45vw);
+    max-width: none;
+  }
 }
 
 .button, #name, #nav {

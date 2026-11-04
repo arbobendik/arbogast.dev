@@ -24,9 +24,11 @@
       <p id="familyName">Arbogast</p>
     </a>
     <nav id="nav">
-      <a href="#projects">projects</a>
+      <a href="#flexlight">flexlight</a>
+      <a href="#flexcudapt">flexcudapt</a>
       <a href="#whoami">whoami</a>
-      <a href="#resume">résumé</a>
+      <a href="#solutions">solutions</a>
+      <a href="#links">links</a>
     </nav>
     <div id="dsgvo">
       <a href="?page=datenschutzerklaerung">Datenschutzerklärung</a>
@@ -35,30 +37,17 @@
     <div id="container">
       <div id="home">
         <div class="menuBackground"></div>
-        <section id="projects" class="row">
-          <div class="header">
-            <h1 class="mainHeader typed">projects</h1>
-            <ul>
-              <li>
-                <a class="projectLinks" title="Path tracer demo: a photorealistic light simulation demonstrated on a few example scenes" href="FlexLight/">Try <b>FlexLight</b>, a path tracer built with WebGPU</a>
-                <p>
-                  Written from scratch in TypeScript and manually optimized, with BVH acceleration, importance sampled BSDFs,
-                  physically based materials, dynamic scenes and NVIDIA's ReSTIR PT Enhanced.
-                  <a href="https://github.com/arbobendik/FlexLight" title="FlexLight on GitHub">Source</a>
-                </p>
-              </li>
-              <li>
-                <a title="FlexCudaPT on GitHub" href="https://github.com/arbobendik/FlexCudaPT"><b>FlexCudaPT</b>, a Blender render engine in CUDA and OptiX</a>
-                <p>
-                  Path traces Blender scenes on RTX GPUs with FlexLight's BSDF and ReSTIR PT Enhanced,
-                  about 4x faster than Cycles and converging around 60x faster in equal time.
-                </p>
-              </li>
-              <li>
-                <a title="E-Mail to Arbogast Solutions" href="mailto:bendik@arbogast.dev?subject=Inquiry%20to%20Arbogast%20Solutions">Need professional dev work? Write to <b>Arbogast Solutions</b></a>
-                <p>Web and automation solutions, from websites to custom software for your business.</p>
-              </li>
-            </ul>
+        <section id="flexlight" class="subsection">
+          <div class="note">
+            <h1 class="typed">FlexLight</h1>
+            <p>
+              <a class="projectLinks" title="Path tracer demo: a photorealistic light simulation demonstrated on a few example scenes" href="FlexLight/">Try <b>FlexLight</b>, a path tracer built with WebGPU</a>
+            </p>
+            <p>
+              Written from scratch in TypeScript and manually optimized, with BVH acceleration, importance sampled BSDFs,
+              physically based materials, dynamic scenes and NVIDIA's ReSTIR PT Enhanced.
+              <a href="https://github.com/arbobendik/FlexLight" title="FlexLight on GitHub">Source</a>
+            </p>
           </div>
           <div class="gallery">
             <a class="projectLinks glow" title="Path tracer screenshots" href="FlexLight/">
@@ -67,7 +56,25 @@
             </a>
           </div>
         </section>
-        <section id="whoami">
+        <section id="flexcudapt" class="subsection">
+          <div class="note">
+            <h2 class="typed">FlexCudaPT</h2>
+            <p>
+              <a title="FlexCudaPT on GitHub" href="https://github.com/arbobendik/FlexCudaPT"><b>FlexCudaPT</b>, a Blender render engine using OptiX or Vulkan</a>
+            </p>
+            <p>
+              Path traces Blender scenes on RTX GPUs with FlexLight's BSDF and ReSTIR PT Enhanced,
+              about 4x faster than Cycles and converging around 60x faster in equal time.
+            </p>
+          </div>
+          <div class="gallery">
+            <a class="glow" title="FlexCudaPT on GitHub" href="https://github.com/arbobendik/FlexCudaPT">
+              <img alt="Blender viewport rendering a scene with FlexCudaPT" src="images/flexcudapt.webp"/>
+              <img class="shadow" alt="" src="images/glow/flexcudapt.webp"/>
+            </a>
+          </div>
+        </section>
+        <section id="whoami" class="subsection">
           <div class="note">
             <h2 class="typed">whoami?</h2>
             <p>
@@ -97,9 +104,15 @@
             </p>
           </div>
         </section>
-        <section id="resume" class="row">
-          <div class="header">
-            <h2 class="mainHeader typed">résumé</h2>
+        <section id="solutions" class="subsection">
+          <div class="note">
+            <h2 class="typed">Need professional dev work?</h2>
+            <p>Web and automation solutions, from websites to custom software for your business.</p>
+          </div>
+        </section>
+        <section id="links" class="subsection">
+          <div class="note">
+            <h2 class="typed">Links</h2>
             <ul>
               <li>
                 <a title="Latest résumé as PDF" href="https://github.com/arbobendik/CV/releases/latest/download/resume.pdf">Résumé</a>
@@ -109,9 +122,6 @@
               </li>
               <li>
                 <a title="GitHub" href="https://github.com/arbobendik">GitHub</a>
-              </li>
-              <li>
-                <a title="E-Mail" href="mailto:bendik@arbogast.dev">E-Mail</a>
               </li>
             </ul>
           </div>

@@ -69,7 +69,7 @@ function typeHeader(element) {
 // The pointer is a point light, every shadow on the page is cast away from it.
 function lightScene() {
   let light = document.getElementById("light");
-  let elements = document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo");
+  let elements = document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo, #spheal");
   let x = 0;
   let y = 0;
   let frame = 0;

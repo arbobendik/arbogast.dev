@@ -203,6 +203,49 @@ li > a {
   transform-origin: 75.6% 74%;
 }
 
+/* the highlights of the eyes, against the shadow direction so the spheal looks at the light,
+   and behind them the dim reflections of the original drawing, always on the opposite side */
+.glint, .shade {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(calc(var(--sx) * var(--reach)), calc(var(--sy) * var(--reach)));
+  transition: transform .15s;
+}
+
+.glint {
+  --reach: -15%;
+  top: 12.7%;
+  left: 15.1%;
+  width: 3.1%;
+  height: 3.8%;
+  background-color: #fff;
+}
+
+.glint + .glint {
+  --reach: -30%;
+  top: 17.8%;
+  left: 32.3%;
+  width: 4.9%;
+  height: 5.8%;
+}
+
+.shade {
+  --reach: 27%;
+  top: 12.7%;
+  left: 15%;
+  width: 3.3%;
+  height: 3.8%;
+  background: radial-gradient(closest-side, #495244 45%, transparent);
+}
+
+.shade + .shade {
+  --reach: 45%;
+  top: 18.3%;
+  left: 32.6%;
+  width: 4.2%;
+  height: 4.7%;
+}
+
 /* cover the eyes of the image, onload.js closes them by animating the scale, the tilted one is also rotated about its top */
 .lid {
   position: absolute;

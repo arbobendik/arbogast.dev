@@ -110,8 +110,17 @@ li > a {
   aspect-ratio: 16 / 10;
 }
 
+.glow > img:first-child {
+  border-radius: .25rem;
+  filter: blur(.5px);
+}
+
 .glow:hover > img:first-child {
   transform: scale(1.02);
+}
+
+.glow > img:last-child {
+  transform: scale(1.04);
 }
 
 /* pre-blurred, with 21% of transparent margin per side for the glow to fade out in */
@@ -165,8 +174,6 @@ li > a {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 0 0 calc(-1.5 * var(--below)) 0;
-  background-color: var(--menu);
   mask-image: linear-gradient(#000 calc(100% - 3 * var(--below)), transparent);
   -webkit-mask-image: linear-gradient(#000 calc(100% - 3 * var(--below)), transparent);
 }
@@ -179,6 +186,8 @@ li > a {
 #spheal {
   flex: none;
   width: min(20rem, 60vmin);
+  /* Antialiasing */
+  filter: blur(1px);
   margin: 0 auto;
 }
 
@@ -338,12 +347,6 @@ html[data-theme="dark"] .webIcon::before {
 
 .blenderIcon::before {
   background: url("icons/blender.svg") center / contain no-repeat;
-}
-
-#links {
-  justify-content: center;
-  padding-left: 0;
-  padding-right: 0;
 }
 
 #links > .note {

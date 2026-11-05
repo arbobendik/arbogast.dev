@@ -14,6 +14,11 @@ const BLINK_PAUSE_MAX = 8000;
 const SPHEAL_TRICKS = ["roll", "jump"];
 const ROLL_TURNS_MIN = 3;
 const ROLL_TURNS_MAX = 8;
+// Blur of content below the window in rem, and the fastest it may drop in rem per second.
+const REVEAL_BLUR = 1.5;
+const REVEAL_SPEED = 4;
+// Fraction of the window height from the top, a section starting above this line is fully sharp.
+const REVEAL_LINE = .67;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_GLOW = "images/glow/screen";
@@ -136,6 +141,54 @@ function animateSpheal() {
   blink();
 }
 
+// Content starts blurred and sharpens as its section rises into the window, never faster than REVEAL_SPEED.
+// A section shares one blur, so the text and the image beside it sharpen at once.
+function revealContent() {
+  let items = Array.from(document.getElementsByClassName("subsection"), (section) => ({ section, blur: REVEAL_BLUR }));
+  let frame = 0;
+  let lastTime = 0;
+
+  let applyBlur = (item, i) => {
+    item.section.style.filter = item.blur ? "blur(" + item.blur + "rem)" : "";
+    item.section.style.setProperty("--below", (i + 1 < items.length ? items[i + 1].blur : 0) + "rem");
+  };
+
+  let update = (time) => {
+    let step = REVEAL_SPEED * (time - lastTime) / 1000;
+    lastTime = time;
+    let line = REVEAL_LINE * innerHeight;
+    let range = innerHeight - line;
+    // Content at the end of the page may never rise past the line, so reaching the end sharpens it too.
+    let end = Math.max(0, Math.min(1, (document.documentElement.scrollHeight - innerHeight - Math.ceil(scrollY)) / range));
+    // Read all positions before writing any style to avoid a layout per element.
+    let rects = items.map((item) => item.section.getBoundingClientRect());
+    let settled = true;
+    items.forEach((item, i) => {
+      // Whatever left the window fades in again when it reappears.
+      let hidden = rects[i].bottom < 0 || rects[i].top > innerHeight;
+      let target = hidden ? REVEAL_BLUR : REVEAL_BLUR * end * Math.max(0, Math.min(1, (rects[i].top - line) / range));
+      item.blur = hidden ? target : Math.max(target, item.blur - step);
+      settled = settled && item.blur === target;
+    });
+    items.forEach(applyBlur);
+    frame = settled ? 0 : requestAnimationFrame(update);
+  };
+
+  // Time starts at the first frame, so neither a slow load nor an idle wait uses up the deblurring.
+  let wake = () => {
+    if (frame) return;
+    frame = requestAnimationFrame((time) => {
+      lastTime = time;
+      frame = requestAnimationFrame(update);
+    });
+  };
+
+  items.forEach(applyBlur);
+  window.addEventListener("scroll", wake);
+  window.addEventListener("resize", wake);
+  wake();
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   let container = document.getElementById("container");
   let darkModeToggle = document.getElementById("darkMode");
@@ -170,6 +223,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);
         lightScene();
         animateSpheal();
+        revealContent();
       }
 
       let img = document.getElementById("originalImage");

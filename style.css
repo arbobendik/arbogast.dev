@@ -12,8 +12,6 @@ html {
   --name: #282828;
   --shadow-dark: #73858a;
   --light: #f2fdff;
-  /* how far the page edge darkens, the falloff of a 10vmin gaussian blur */
-  --edge: #00000080 0, #0000004f 5vmin, #00000029 10vmin, #00000012 15vmin, #00000005 20vmin, #0000 25vmin;
   /* direction shadows are cast in, set by onload.js */
   --sx: 1;
   --sy: 1;
@@ -450,7 +448,7 @@ html[data-theme="dark"] .webIcon::before {
   top: -50vh;
   width: 100%;
   height: 200vh;
-  background: linear-gradient(to right, var(--edge)), linear-gradient(to left, var(--edge)), var(--tone);
+  background-color: var(--tone);
 }
 
 /* the light, centered on the top left corner and moved by onload.js, so moving it never repaints */

@@ -163,6 +163,7 @@ li > a {
   padding-top: 7.5rem;
 }
 
+/* stays put as the hover target, so the moving body can't slip out from under the pointer */
 #spheal {
   flex: none;
   width: min(20rem, 60vmin);
@@ -171,6 +172,7 @@ li > a {
 
 #sphealBody {
   position: relative;
+  isolation: isolate;
 }
 
 #sphealBody > img {
@@ -180,9 +182,11 @@ li > a {
 
 /* same canvas as the body, on top of it at rest to cover the outline the body only needs without its tail */
 #sphealTail {
+  --tucked: translate(-12.2%, -5.5%) rotate(-30deg) scale(.45);
   position: absolute;
   top: 0;
   left: 0;
+  transform-origin: 75.6% 74%;
 }
 
 /* cover the eyes of the image, onload.js closes them by animating the scale, the tilted one is also rotated about its top */
@@ -207,6 +211,53 @@ li > a {
   width: 9.3%;
   rotate: none;
   background-color: #8ca0c6;
+}
+
+/* turns around the center of the round body, towards where it faces */
+#spheal[data-trick="roll"] > #sphealBody {
+  animation: roll calc(var(--turns) * .5s) ease-in-out .3s;
+  transform-origin: 39% 48%;
+}
+
+/* tucked in before the spin and back out after it */
+#spheal[data-trick="roll"] #sphealTail {
+  z-index: -1;
+  animation: tuck .3s ease-in forwards, untuck .3s ease-out calc(.3s + var(--turns) * .5s) forwards;
+}
+
+#spheal[data-trick="jump"] > #sphealBody {
+  animation: jump .8s ease-in-out;
+  transform-origin: bottom;
+}
+
+@keyframes roll {
+  to {
+    transform: rotate(calc(var(--turns) * -360deg));
+  }
+}
+
+@keyframes tuck {
+  to {
+    transform: var(--tucked);
+  }
+}
+
+@keyframes untuck {
+  from {
+    transform: var(--tucked);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@keyframes jump {
+  20%, 80% {
+    transform: scale(1.1, .9);
+  }
+  50% {
+    transform: translateY(-30%) scale(.95, 1.05);
+  }
 }
 
 /* a pseudo element, because typing a header replaces its content */

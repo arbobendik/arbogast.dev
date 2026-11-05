@@ -11,6 +11,9 @@ const SHADOW_STEPS = 8;
 const BLINK_DURATION = 200;
 const BLINK_PAUSE_MIN = 3000;
 const BLINK_PAUSE_MAX = 8000;
+const SPHEAL_TRICKS = ["roll", "jump"];
+const ROLL_TURNS_MIN = 3;
+const ROLL_TURNS_MAX = 8;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_GLOW = "images/glow/screen";
@@ -110,8 +113,9 @@ function lightScene() {
   requestAnimationFrame(orbit);
 }
 
-// Blinks once or twice after every random pause.
+// Blinks once or twice after every random pause, and rolls or jumps when hovered.
 function animateSpheal() {
+  let spheal = document.getElementById("spheal");
   let lids = document.querySelectorAll(".lid");
 
   let blink = () => {
@@ -120,6 +124,15 @@ function animateSpheal() {
     setTimeout(blink, BLINK_PAUSE_MIN + Math.random() * (BLINK_PAUSE_MAX - BLINK_PAUSE_MIN));
   };
 
+  spheal.addEventListener("pointerenter", () => {
+    if (spheal.dataset.trick) return;
+    spheal.style.setProperty("--turns", ROLL_TURNS_MIN + Math.floor(Math.random() * (ROLL_TURNS_MAX - ROLL_TURNS_MIN + 1)));
+    spheal.dataset.trick = SPHEAL_TRICKS[Math.floor(Math.random() * SPHEAL_TRICKS.length)];
+  });
+  // A roll has more animations, it only ends once the tail is back out.
+  spheal.addEventListener("animationend", (event) => {
+    if (event.animationName === "untuck" || event.animationName === "jump") delete spheal.dataset.trick;
+  });
   blink();
 }
 

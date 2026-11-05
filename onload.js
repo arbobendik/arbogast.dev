@@ -8,6 +8,9 @@ const LIGHT_RANGE = .5;
 const LIGHT_ORBIT_PERIOD = 20000;
 // Shadows only repaint when their direction crosses one of these steps per unit, too small to see.
 const SHADOW_STEPS = 8;
+const BLINK_DURATION = 200;
+const BLINK_PAUSE_MIN = 3000;
+const BLINK_PAUSE_MAX = 8000;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_GLOW = "images/glow/screen";
@@ -107,6 +110,19 @@ function lightScene() {
   requestAnimationFrame(orbit);
 }
 
+// Blinks once or twice after every random pause.
+function animateSpheal() {
+  let lids = document.querySelectorAll(".lid");
+
+  let blink = () => {
+    let iterations = 1 + Math.floor(Math.random() * 2);
+    lids.forEach((lid) => lid.animate({ transform: ["scaleY(0)", "scaleY(1)", "scaleY(0)"] }, { duration: BLINK_DURATION, iterations }));
+    setTimeout(blink, BLINK_PAUSE_MIN + Math.random() * (BLINK_PAUSE_MAX - BLINK_PAUSE_MIN));
+  };
+
+  blink();
+}
+
 window.addEventListener("DOMContentLoaded", async () => {
   let container = document.getElementById("container");
   let darkModeToggle = document.getElementById("darkMode");
@@ -140,6 +156,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
         Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);
         lightScene();
+        animateSpheal();
       }
 
       let img = document.getElementById("originalImage");

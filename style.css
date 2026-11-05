@@ -163,6 +163,52 @@ li > a {
   padding-top: 7.5rem;
 }
 
+#spheal {
+  flex: none;
+  width: min(20rem, 60vmin);
+  margin: 0 auto;
+}
+
+#sphealBody {
+  position: relative;
+}
+
+#sphealBody > img {
+  display: block;
+  width: 100%;
+}
+
+/* same canvas as the body, on top of it at rest to cover the outline the body only needs without its tail */
+#sphealTail {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+/* cover the eyes of the image, onload.js closes them by animating the scale, the tilted one is also rotated about its top */
+.lid {
+  position: absolute;
+  top: 10.2%;
+  left: 16.7%;
+  width: 4.7%;
+  height: 10.7%;
+  rotate: 34deg;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border-bottom: .15rem solid #111;
+  background-color: #9eb1d2;
+  transform: scaleY(0);
+  transform-origin: top;
+}
+
+.lid + .lid {
+  top: 15.3%;
+  left: 30.1%;
+  width: 9.3%;
+  rotate: none;
+  background-color: #8ca0c6;
+}
+
 /* a pseudo element, because typing a header replaces its content */
 .webIcon::before, .blenderIcon::before {
   content: "";

@@ -8,9 +8,11 @@
 const OCEAN_CELLS = 128;
 const OCEAN_STEP = 1 / 60;
 const OCEAN_ITERATIONS = 12;
+// Seconds simulated before the ocean is first drawn, so the swell has already rolled in.
+const OCEAN_WARMUP = 10;
 // Drawn at this fraction of the window's resolution, as the lines are soft anyway, with this many lines along the shorter side.
 const OCEAN_RESOLUTION = .5;
-const OCEAN_LINES = 48;
+const OCEAN_LINES = 30;
 // The current all water returns to by this fraction per step, flowing right, so sheets come in from the left.
 const OCEAN_CURRENT = [.02, .002];
 const OCEAN_CALM = .005;
@@ -19,7 +21,7 @@ const WAVE_SPEED = .05;
 const WAVE_KEEP = .999;
 // A swell rolling in from the left in groups, up to SWELL_HEIGHT line spacings high, at SWELL_RATE radians per second,
 // its crests slanted by SWELL_SLANT radians per shorter side.
-const SWELL_HEIGHT = .7;
+const SWELL_HEIGHT = .44;
 const SWELL_RATE = 6;
 const SWELL_SLANT = 15;
 // At most ICE_SHEETS at once, a new one after a random pause, sizes, how far they turn per second, how long the largest
@@ -27,21 +29,21 @@ const SWELL_SLANT = 15;
 // under them takes on per step. They push the water down by ICE_DRAFT line spacings where they move in, so it rises around them,
 // and calm the waves under them by ICE_CALM per step, leaving a lee behind them.
 const ICE_SHEETS = 8;
-const ICE_PAUSE_MIN = 4;
-const ICE_PAUSE_MAX = 12;
+const ICE_PAUSE_MIN = 20;
+const ICE_PAUSE_MAX = 35;
 const ICE_SIZE_MIN = .04;
 const ICE_SIZE_MAX = .12;
 const ICE_SPIN = .05;
 const ICE_INERTIA = 2;
 const ICE_BOUNCE = 2;
 const ICE_GRIP = .1;
-const ICE_DRAFT = .3;
+const ICE_DRAFT = .19;
 const ICE_CALM = .15;
 // How much of the pointer's speed the water under it takes on per step, how far around it, and how many line spacings
 // deep it pushes the water down, which rises behind it as it moves on.
 const POINTER_GRIP = .2;
 const POINTER_RADIUS = .02;
-const POINTER_DEPTH = 2.25;
+const POINTER_DEPTH = 1.4;
 
 // One triangle covering the whole target.
 const OCEAN_VERTEX = `#version 300 es
@@ -373,5 +375,8 @@ function drawOcean() {
   resize();
   paint();
   for (let i = 0; i < ICE_SHEETS / 2; i++) spawn(Math.random() * view[0], Math.random() * view[1]);
+  let now = performance.now() / 1000;
+  drift(now, 0);
+  for (let time = now - OCEAN_WARMUP; time < now; time += OCEAN_STEP) simulate(time);
   requestAnimationFrame(frame);
 }

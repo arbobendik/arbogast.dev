@@ -17,6 +17,11 @@ const OCEAN_CALM = .005;
 // The wave speed squared in cells per step, and how much of the waves' speed is left after a step.
 const WAVE_SPEED = .05;
 const WAVE_KEEP = .999;
+// A swell rolling in from the left in groups, up to SWELL_HEIGHT line spacings high, at SWELL_RATE radians per second,
+// its crests slanted by SWELL_SLANT radians per shorter side.
+const SWELL_HEIGHT = .7;
+const SWELL_RATE = 6;
+const SWELL_SLANT = 15;
 // At most ICE_SHEETS at once, a new one after a random pause, sizes, how far they turn per second, how long the largest
 // takes to follow the water, how hard bumping sheets push each other apart, and how much of the sheets' speed the water
 // under them takes on per step. They push the water down by ICE_DRAFT line spacings where they move in, so it rises around them,
@@ -116,6 +121,8 @@ void main() {
   water.b += water.a;
   water.xy = mix(water.xy, vec2(${OCEAN_CURRENT}), float(${OCEAN_CALM}));
   vec2 p = gl_FragCoord.xy / float(${OCEAN_CELLS});
+  float swell = float(${SWELL_HEIGHT}) * sin(time * float(${SWELL_RATE}) - p.y * float(${SWELL_SLANT})) * noise(vec2(p.y * 2., time * .3));
+  if (cell.x == 0) water.ba = vec2(swell, swell - here.b);
   water.xy = mix(water.xy, pointer.zw, finger(p, pointer.xy) * float(${POINTER_GRIP}));
   water.b -= float(${POINTER_DEPTH}) * (finger(p, pointer.xy) - finger(p, pointer.xy - pointer.zw * float(${OCEAN_STEP})));
   // Where the sheets were a step ago, relative to the water.
@@ -266,8 +273,9 @@ function drawOcean() {
 
   // Where the pointer is and how fast it moved since the last step, far away if it didn't.
   let pointer = [-1, -1, 0, 0];
-  let simulate = () => {
+  let simulate = (time) => {
     gl.useProgram(programs.water.program);
+    gl.uniform1f(programs.water.time, time);
     gl.uniform4fv(programs.water.pointer, pointer);
     pointer = [-1, -1, 0, 0];
     pass(programs.water, states[1]);
@@ -347,7 +355,7 @@ function drawOcean() {
     let elapsed = Math.min(seconds - lastTime, .1);
     lastTime = seconds;
     drift(seconds, elapsed);
-    for (pending += elapsed; pending >= OCEAN_STEP; pending -= OCEAN_STEP) simulate();
+    for (pending += elapsed; pending >= OCEAN_STEP; pending -= OCEAN_STEP) simulate(seconds);
     gl.useProgram(programs.draw.program);
     gl.uniform1f(programs.draw.time, seconds);
     pass(programs.draw, null);

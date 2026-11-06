@@ -120,7 +120,7 @@ li > a {
 }
 
 .glow > img:last-child {
-  transform: scale(1.04);
+  transform: scale(.95);
 }
 
 /* pre-blurred, with 21% of transparent margin per side for the glow to fade out in */

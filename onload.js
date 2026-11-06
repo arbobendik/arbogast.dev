@@ -42,6 +42,8 @@ const REVEAL_TIME = 5;
 // of the top and bottom window edge, exponentially faster further in and slower towards the edges.
 const REVEAL_SPEED = 4;
 const REVEAL_LINE = .25;
+// Images sharpen at this fraction of the speed of the text beside them, still within REVEAL_TIME.
+const REVEAL_IMAGE_SPEED = .75;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_GLOW = "images/glow/screen";
@@ -218,14 +220,18 @@ function animateSpheal() {
 }
 
 // Content starts blurred and sharpens once its section is in the window, the slower the closer it is to the top or bottom edge.
-// A section shares one blur, so the text and the image beside it sharpen at once.
+// A section shares one blur, so the text and the image beside it sharpen together, the image a little later.
 function revealContent() {
-  let items = Array.from(document.getElementsByClassName("subsection"), (section) => ({ section, blur: REVEAL_BLUR }));
+  let items = Array.from(document.getElementsByClassName("subsection"), (section) =>
+    ({ section, images: section.querySelectorAll(".glow, #sphealBody"), blur: REVEAL_BLUR, imageBlur: REVEAL_BLUR }));
   let frame = 0;
   let lastTime = 0;
 
   let applyBlur = (item, i) => {
     item.section.style.filter = item.blur ? "blur(" + item.blur + "rem)" : "";
+    // The section's blur already blurs its images, which only add what their own blur has more.
+    let extra = Math.sqrt(item.imageBlur ** 2 - item.blur ** 2);
+    item.images.forEach((image) => image.style.filter = extra ? "blur(" + extra + "rem)" : "");
     item.section.style.setProperty("--below", (i + 1 < items.length ? items[i + 1].blur : 0) + "rem");
   };
 
@@ -242,9 +248,11 @@ function revealContent() {
       let middle = (Math.max(rects[i].top, 0) + Math.min(rects[i].bottom, innerHeight)) / 2;
       let distance = Math.min(middle, innerHeight - middle) / innerHeight;
       // REVEAL_SPEED at REVEAL_LINE, none at the edge, but never slower than sharpening within REVEAL_TIME.
-      let speed = Math.max(REVEAL_BLUR / REVEAL_TIME, REVEAL_SPEED * Math.expm1(distance / REVEAL_LINE) / Math.expm1(1));
-      item.blur = hidden ? REVEAL_BLUR : Math.max(0, item.blur - speed * seconds);
-      settled = settled && (hidden || !item.blur);
+      let speed = REVEAL_SPEED * Math.expm1(distance / REVEAL_LINE) / Math.expm1(1);
+      let slowest = REVEAL_BLUR / REVEAL_TIME;
+      item.blur = hidden ? REVEAL_BLUR : Math.max(0, item.blur - Math.max(slowest, speed) * seconds);
+      item.imageBlur = hidden ? REVEAL_BLUR : Math.max(0, item.imageBlur - Math.max(slowest, speed * REVEAL_IMAGE_SPEED) * seconds);
+      settled = settled && (hidden || !item.imageBlur);
     });
     items.forEach(applyBlur);
     frame = settled ? 0 : requestAnimationFrame(update);

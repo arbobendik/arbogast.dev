@@ -147,6 +147,7 @@ li > a {
 /* the glows would otherwise make narrow windows scroll sideways */
 #home {
   overflow-x: clip;
+  margin-bottom: 5rem;
 }
 
 /* the text alternates between a left and a right hand column, every other section sits on a band */
@@ -180,6 +181,10 @@ li > a {
 
 #whoami {
   padding-top: 7.5rem;
+}
+
+#whoami > div:first-child {
+  margin-bottom: 3rem;
 }
 
 /* stays put as the hover target, so the moving body can't slip out from under the pointer */
@@ -442,6 +447,10 @@ html[data-theme="dark"] .webIcon::before {
 
 /* too narrow for two columns, everything follows in one centered column */
 @media (max-width: 62.5rem), (max-aspect-ratio: 143/100) {
+  #whoami {
+    padding-bottom: 0;
+  }
+
   .subsection, .subsection:nth-of-type(even) {
     flex-direction: column;
     padding-left: 0;

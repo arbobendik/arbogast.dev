@@ -35,11 +35,13 @@ const CLAP_COUNT = 3;
 const CLAP_DURATION = 350;
 const CLAP_ANGLE = 20;
 const CLAP_SCALE = .55;
-// Blur of content below the window in rem, and the fastest it may drop in rem per second.
+// Blur of content not shown yet in rem, and the longest it takes to sharpen in seconds, even right at the window edge.
 const REVEAL_BLUR = 1.5;
+const REVEAL_TIME = 5;
+// How fast content sharpens in rem per second when it is REVEAL_LINE, a fraction of the window height, away from the nearer
+// of the top and bottom window edge, exponentially faster further in and slower towards the edges.
 const REVEAL_SPEED = 4;
-// Fraction of the window height from the top, a section starting above this line is fully sharp.
-const REVEAL_LINE = .67;
+const REVEAL_LINE = .25;
 
 const PATH_SCREENSHOT = "FlexLight/static/screenshots/screen";
 const PATH_GLOW = "images/glow/screen";
@@ -215,7 +217,7 @@ function animateSpheal() {
   idle();
 }
 
-// Content starts blurred and sharpens as its section rises into the window, never faster than REVEAL_SPEED.
+// Content starts blurred and sharpens once its section is in the window, the slower the closer it is to the top or bottom edge.
 // A section shares one blur, so the text and the image beside it sharpen at once.
 function revealContent() {
   let items = Array.from(document.getElementsByClassName("subsection"), (section) => ({ section, blur: REVEAL_BLUR }));
@@ -228,21 +230,21 @@ function revealContent() {
   };
 
   let update = (time) => {
-    let step = REVEAL_SPEED * (time - lastTime) / 1000;
+    let seconds = (time - lastTime) / 1000;
     lastTime = time;
-    let line = REVEAL_LINE * innerHeight;
-    let range = innerHeight - line;
-    // Content at the end of the page may never rise past the line, so reaching the end sharpens it too.
-    let end = Math.max(0, Math.min(1, (document.documentElement.scrollHeight - innerHeight - Math.ceil(scrollY)) / range));
     // Read all positions before writing any style to avoid a layout per element.
     let rects = items.map((item) => item.section.getBoundingClientRect());
     let settled = true;
     items.forEach((item, i) => {
       // Whatever left the window fades in again when it reappears.
       let hidden = rects[i].bottom < 0 || rects[i].top > innerHeight;
-      let target = hidden ? REVEAL_BLUR : REVEAL_BLUR * end * Math.max(0, Math.min(1, (rects[i].top - line) / range));
-      item.blur = hidden ? target : Math.max(target, item.blur - step);
-      settled = settled && item.blur === target;
+      // Distance of the middle of the visible part to the nearer window edge, as a fraction of the window height.
+      let middle = (Math.max(rects[i].top, 0) + Math.min(rects[i].bottom, innerHeight)) / 2;
+      let distance = Math.min(middle, innerHeight - middle) / innerHeight;
+      // REVEAL_SPEED at REVEAL_LINE, none at the edge, but never slower than sharpening within REVEAL_TIME.
+      let speed = Math.max(REVEAL_BLUR / REVEAL_TIME, REVEAL_SPEED * Math.expm1(distance / REVEAL_LINE) / Math.expm1(1));
+      item.blur = hidden ? REVEAL_BLUR : Math.max(0, item.blur - speed * seconds);
+      settled = settled && (hidden || !item.blur);
     });
     items.forEach(applyBlur);
     frame = settled ? 0 : requestAnimationFrame(update);

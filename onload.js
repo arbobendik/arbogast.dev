@@ -133,7 +133,8 @@ function lightScene() {
   requestAnimationFrame(orbit);
 }
 
-// Blinks once or twice after random pauses, swings or smiles after others, and rolls or jumps when hovered.
+// Blinks once or twice after random pauses, swings or smiles after others, rolls or jumps when hovered,
+// and smiles and blinks after a swing or a roll.
 function animateSpheal() {
   let spheal = document.getElementById("spheal");
   let tail = document.getElementById("sphealTail");
@@ -143,7 +144,11 @@ function animateSpheal() {
   let blink = () => {
     let iterations = 1 + Math.floor(Math.random() * 2);
     lids.forEach((lid) => lid.animate({ transform: ["scaleY(0)", "scaleY(1)", "scaleY(0)"] }, { duration: BLINK_DURATION, iterations }));
-    setTimeout(blink, BLINK_PAUSE_MIN + Math.random() * (BLINK_PAUSE_MAX - BLINK_PAUSE_MIN));
+  };
+
+  let keepBlinking = () => {
+    blink();
+    setTimeout(keepBlinking, BLINK_PAUSE_MIN + Math.random() * (BLINK_PAUSE_MAX - BLINK_PAUSE_MIN));
   };
 
   // Opens the mouth quickly, keeps grinning a while and closes it again.
@@ -163,7 +168,10 @@ function animateSpheal() {
       push.push({ rotate: -Math.max(0, tilt) * SWING_PUSH + "deg", zIndex: tilt > 0 ? -1 : "auto" });
     }
     tail.animate(push, SWING_COUNT * SWING_PERIOD);
-    return spheal.animate(body, SWING_COUNT * SWING_PERIOD).finished;
+    return spheal.animate(body, SWING_COUNT * SWING_PERIOD).finished.then(() => {
+      smile();
+      blink();
+    });
   };
 
   // After every random pause does one of these, then waits for the next.
@@ -181,8 +189,12 @@ function animateSpheal() {
   // A roll has more animations, it only ends once the tail is back out.
   spheal.addEventListener("animationend", (event) => {
     if (event.animationName === "untuck" || event.animationName === "jump") delete spheal.dataset.trick;
+    if (event.animationName === "untuck") {
+      smile();
+      blink();
+    }
   });
-  blink();
+  keepBlinking();
   idle();
 }
 

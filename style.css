@@ -594,6 +594,16 @@ html[data-theme="dark"] .webIcon::before {
   will-change: transform;
 }
 
+/* drawn by ocean.js in its color, faint enough to stay behind the text */
+#ocean {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  color: var(--text);
+  opacity: .08;
+}
+
 #dsgvo {
   z-index: 100;
   position: fixed;

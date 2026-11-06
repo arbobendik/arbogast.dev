@@ -378,6 +378,7 @@ window.addEventListener("DOMContentLoaded", async () => {
         Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);
         castShadows();
         lightScene();
+        drawOcean();
         animateSpheal();
         revealContent();
       }

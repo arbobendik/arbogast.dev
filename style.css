@@ -201,13 +201,14 @@ li > a {
   width: 100%;
 }
 
-/* same canvas as the body, on top of it at rest to cover the outline the body only needs without its tail */
+/* same canvas as the body, on top of it at rest to cover the outline the body only needs without its tail,
+   turning about the bottom of the joint, so bending up never pulls it off the body */
 #sphealTail {
-  --tucked: translate(-12.2%, -5.5%) rotate(-30deg) scale(.45);
+  --tucked: translate(-5.19%, -11.33%) rotate(-30deg) scale(.45);
   position: absolute;
   top: 0;
   left: 0;
-  transform-origin: 75.6% 74%;
+  transform-origin: 68% 87%;
 }
 
 /* the highlights of the eyes, against the shadow direction so the spheal looks at the light,
@@ -275,6 +276,11 @@ li > a {
   width: 9.3%;
   rotate: none;
   background-color: #8ca0c6;
+}
+
+/* swings by rolling on its round belly, around the center of it, moved by onload.js */
+#spheal {
+  transform-origin: 39% 48%;
 }
 
 /* turns around the center of the round body, towards where it faces */

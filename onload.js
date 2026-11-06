@@ -14,6 +14,20 @@ const BLINK_PAUSE_MAX = 8000;
 const SPHEAL_TRICKS = ["roll", "jump"];
 const ROLL_TURNS_MIN = 3;
 const ROLL_TURNS_MAX = 8;
+// Pause before each idle animation, which is picked at random.
+const IDLE_PAUSE_MIN = 6000;
+const IDLE_PAUSE_MAX = 14000;
+// How often it swings back and forth in a row, how long each swing takes and how far it leans back at most in degrees,
+// just short of tipping over, leaning forward only half as far.
+const SWING_COUNT = 4;
+const SWING_PERIOD = 1500;
+const SWING_TILT = 20;
+// Keyframes per swing, linear in between.
+const SWING_STEPS = 24;
+// Radius of the round belly it rolls on, as a share of its width.
+const BELLY_RADIUS = .38;
+// How much more the tail bends up than it leans back, as leaning lowers the tail too, so it stays on the ground.
+const SWING_PUSH = 1.5;
 // Blur of content below the window in rem, and the fastest it may drop in rem per second.
 const REVEAL_BLUR = 1.5;
 const REVEAL_SPEED = 4;
@@ -118,9 +132,10 @@ function lightScene() {
   requestAnimationFrame(orbit);
 }
 
-// Blinks once or twice after every random pause, and rolls or jumps when hovered.
+// Blinks once or twice after random pauses, swings after others, and rolls or jumps when hovered.
 function animateSpheal() {
   let spheal = document.getElementById("spheal");
+  let tail = document.getElementById("sphealTail");
   let lids = document.querySelectorAll(".lid");
 
   let blink = () => {
@@ -128,6 +143,29 @@ function animateSpheal() {
     lids.forEach((lid) => lid.animate({ transform: ["scaleY(0)", "scaleY(1)", "scaleY(0)"] }, { duration: BLINK_DURATION, iterations }));
     setTimeout(blink, BLINK_PAUSE_MIN + Math.random() * (BLINK_PAUSE_MAX - BLINK_PAUSE_MIN));
   };
+
+  // Rolls back and forth on its belly like a sine, further with every swing until it almost tips over, then calming down again.
+  // Leaning back, the tail stays on the ground, as if it pushed itself off with it, bending up behind the body so it never covers it.
+  let swing = () => {
+    let body = [];
+    let push = [];
+    for (let i = 0; i <= SWING_COUNT * SWING_STEPS; i++) {
+      let t = i / (SWING_COUNT * SWING_STEPS);
+      let tilt = SWING_TILT * Math.sin(Math.PI * t) * Math.sin(2 * Math.PI * SWING_COUNT * t);
+      tilt = tilt < 0 ? tilt / 2 : tilt;
+      body.push({ rotate: tilt + "deg", translate: BELLY_RADIUS * tilt * Math.PI / 180 * 100 + "% 0" });
+      push.push({ rotate: -Math.max(0, tilt) * SWING_PUSH + "deg", zIndex: tilt > 0 ? -1 : "auto" });
+    }
+    tail.animate(push, SWING_COUNT * SWING_PERIOD);
+    return spheal.animate(body, SWING_COUNT * SWING_PERIOD).finished;
+  };
+
+  // After every random pause does one of these, then waits for the next.
+  let idles = [swing];
+  let idle = () => setTimeout(async () => {
+    await idles[Math.floor(Math.random() * idles.length)]();
+    idle();
+  }, IDLE_PAUSE_MIN + Math.random() * (IDLE_PAUSE_MAX - IDLE_PAUSE_MIN));
 
   spheal.addEventListener("pointerenter", () => {
     if (spheal.dataset.trick) return;
@@ -139,6 +177,7 @@ function animateSpheal() {
     if (event.animationName === "untuck" || event.animationName === "jump") delete spheal.dataset.trick;
   });
   blink();
+  idle();
 }
 
 // Content starts blurred and sharpens as its section rises into the window, never faster than REVEAL_SPEED.

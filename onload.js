@@ -94,26 +94,52 @@ function typeHeader(element) {
 // The pointer is a point light, every shadow on the page is cast away from it.
 function lightScene() {
   let light = document.getElementById("light");
-  let elements = document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo, #spheal");
+  let elements = Array.from(document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo, #spheal"));
+  let spheal = elements.indexOf(document.getElementById("spheal"));
   let x = 0;
   let y = 0;
   let frame = 0;
   let following = false;
 
+  // The shadow direction last written to each element, so only changes are written.
+  let shadows = elements.map(() => ({ sx: null, sy: null }));
+
+  // Each element's middle, top and bottom relative to the page, or to the window if it or a parent is fixed. Measuring forces
+  // a layout, so it only happens again once the layout changed, and for the spheal while its swing moves it, and once after.
+  let places = [];
+  let stale = true;
+  let swung = false;
+  let measure = (i) => {
+    let rect = elements[i].getBoundingClientRect();
+    let fixed = false;
+    for (let element = elements[i]; element && !fixed; element = element.parentElement) fixed = getComputedStyle(element).position === "fixed";
+    let left = fixed ? 0 : scrollX;
+    let top = fixed ? 0 : scrollY;
+    places[i] = { fixed, x: rect.left + rect.width / 2 + left, y: rect.top + rect.height / 2 + top, top: rect.top + top, bottom: rect.bottom + top };
+  };
+
   let update = () => {
     frame = 0;
-    light.style.transform = "translate(" + x + "px, " + y + "px)";
     let range = LIGHT_RANGE * Math.min(innerWidth, innerHeight);
-    // Read all positions before writing any style to avoid a layout per element.
-    let rects = Array.from(elements, (element) => element.getBoundingClientRect());
+    let swinging = "swing" in elements[spheal].dataset;
+    // Measure before writing any style, the light included, so measuring needs no extra layout.
+    if (stale) elements.forEach((element, i) => measure(i));
+    else if (swinging || swung) measure(spheal);
+    stale = false;
+    swung = swinging;
+    light.style.transform = "translate(" + x + "px, " + y + "px)";
     elements.forEach((element, i) => {
-      let rect = rects[i];
-      if (rect.bottom < 0 || rect.top > innerHeight) return;
-      let dx = (rect.left + rect.width / 2 - x) / range;
-      let dy = (rect.top + rect.height / 2 - y) / range;
+      let place = places[i];
+      let left = place.fixed ? 0 : scrollX;
+      let top = place.fixed ? 0 : scrollY;
+      if (place.bottom - top < 0 || place.top - top > innerHeight) return;
+      let dx = (place.x - left - x) / range;
+      let dy = (place.y - top - y) / range;
       let length = Math.max(1, Math.hypot(dx, dy));
-      element.style.setProperty("--sx", Math.round(dx / length * SHADOW_STEPS) / SHADOW_STEPS);
-      element.style.setProperty("--sy", Math.round(dy / length * SHADOW_STEPS) / SHADOW_STEPS);
+      let sx = Math.round(dx / length * SHADOW_STEPS) / SHADOW_STEPS;
+      let sy = Math.round(dy / length * SHADOW_STEPS) / SHADOW_STEPS;
+      if (sx !== shadows[i].sx) element.style.setProperty("--sx", shadows[i].sx = sx);
+      if (sy !== shadows[i].sy) element.style.setProperty("--sy", shadows[i].sy = sy);
     });
   };
 
@@ -129,6 +155,8 @@ function lightScene() {
     let angle = 2 * Math.PI * time / LIGHT_ORBIT_PERIOD + 1.25 * Math.PI;
     x = innerWidth * (.5 + .4 * Math.cos(angle));
     y = innerHeight * (.5 + .4 * Math.sin(angle));
+    // This update covers any a scroll or resize queued for the same frame.
+    cancelAnimationFrame(frame);
     update();
     requestAnimationFrame(orbit);
   };
@@ -139,7 +167,13 @@ function lightScene() {
     moveLight(event.clientX, event.clientY);
   });
   window.addEventListener("scroll", () => moveLight(x, y));
-  window.addEventListener("resize", () => moveLight(x, y));
+  window.addEventListener("resize", () => {
+    stale = true;
+    moveLight(x, y);
+  });
+  // Any lit element, its section or the page changing size may move the others.
+  let resizes = new ResizeObserver(() => stale = true);
+  [...elements, ...document.getElementsByClassName("subsection"), document.body].forEach((element) => resizes.observe(element));
   requestAnimationFrame(orbit);
 }
 
@@ -184,7 +218,10 @@ function animateSpheal() {
     }
     tail.animate(push, SWING_COUNT * SWING_PERIOD);
     flippers.forEach(([flipper, down]) => flipper.animate({ rotate: paddle.map((angle) => down * angle + "deg") }, SWING_COUNT * SWING_PERIOD));
+    // Marks that the swing moves the spheal, so lightScene measures where it is again every frame.
+    spheal.dataset.swing = "";
     return spheal.animate(body, SWING_COUNT * SWING_PERIOD).finished.then(() => {
+      delete spheal.dataset.swing;
       smile();
       blink();
     });

@@ -28,6 +28,7 @@ const SWING_STEPS = 24;
 const BELLY_RADIUS = .38;
 // How much more the tail bends up than it leans back, as leaning lowers the tail too, so it stays on the ground.
 const SWING_PUSH = 1.5;
+const SMILE_DURATION = 2500;
 // Blur of content below the window in rem, and the fastest it may drop in rem per second.
 const REVEAL_BLUR = 1.5;
 const REVEAL_SPEED = 4;
@@ -132,17 +133,22 @@ function lightScene() {
   requestAnimationFrame(orbit);
 }
 
-// Blinks once or twice after random pauses, swings after others, and rolls or jumps when hovered.
+// Blinks once or twice after random pauses, swings or smiles after others, and rolls or jumps when hovered.
 function animateSpheal() {
   let spheal = document.getElementById("spheal");
   let tail = document.getElementById("sphealTail");
   let lids = document.querySelectorAll(".lid");
+  let mouth = document.getElementById("sphealMouth");
 
   let blink = () => {
     let iterations = 1 + Math.floor(Math.random() * 2);
     lids.forEach((lid) => lid.animate({ transform: ["scaleY(0)", "scaleY(1)", "scaleY(0)"] }, { duration: BLINK_DURATION, iterations }));
     setTimeout(blink, BLINK_PAUSE_MIN + Math.random() * (BLINK_PAUSE_MAX - BLINK_PAUSE_MIN));
   };
+
+  // Opens the mouth quickly, keeps grinning a while and closes it again.
+  let smile = () => mouth.animate([{ scale: "1 0", easing: "ease-out" }, { scale: "1 1", offset: .15 },
+    { scale: "1 1", offset: .85, easing: "ease-in" }, { scale: "1 0" }], SMILE_DURATION).finished;
 
   // Rolls back and forth on its belly like a sine, further with every swing until it almost tips over, then calming down again.
   // Leaning back, the tail stays on the ground, as if it pushed itself off with it, bending up behind the body so it never covers it.
@@ -161,7 +167,7 @@ function animateSpheal() {
   };
 
   // After every random pause does one of these, then waits for the next.
-  let idles = [swing];
+  let idles = [swing, smile];
   let idle = () => setTimeout(async () => {
     await idles[Math.floor(Math.random() * idles.length)]();
     idle();

@@ -220,6 +220,17 @@ li > a {
   transform-origin: 20% 20.5%;
 }
 
+/* an open mouth under the snout, shut by squashing it up against the slanted underside of the snout, opened by onload.js */
+#sphealMouth {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 20% 29.5%;
+  rotate: 15deg;
+  scale: 1 0;
+  transform: rotate(-15deg);
+}
+
 /* the highlights of the eyes, against the shadow direction so the spheal looks at the light,
    and behind them the dim reflections of the original drawing, always on the opposite side */
 .glint, .shade {

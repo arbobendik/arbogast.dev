@@ -336,6 +336,17 @@ li > a {
   transform-origin: bottom;
 }
 
+/* pushes itself off the ground with its flippers to start a jump or a roll */
+#spheal[data-trick] .flipper {
+  animation: paddle .5s ease-in-out;
+}
+
+@keyframes paddle {
+  40% {
+    rotate: calc(var(--down) * 25deg);
+  }
+}
+
 @keyframes roll {
   to {
     transform: rotate(calc(var(--turns) * -360deg));

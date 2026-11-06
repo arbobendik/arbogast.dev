@@ -164,18 +164,22 @@ function animateSpheal() {
     { scale: "1 1", offset: .85, easing: "ease-in" }, { scale: "1 0" }], SMILE_DURATION).finished;
 
   // Rolls back and forth on its belly like a sine, further with every swing until it almost tips over, then calming down again.
-  // Leaning back, the tail stays on the ground, as if it pushed itself off with it, bending up behind the body so it never covers it.
+  // Leaning back, the tail stays on the ground, as if it pushed itself off with it, bending up behind the body so it never covers it,
+  // and leaning forward, the flippers press down on the ground the same way.
   let swing = () => {
     let body = [];
     let push = [];
+    let paddle = [];
     for (let i = 0; i <= SWING_COUNT * SWING_STEPS; i++) {
       let t = i / (SWING_COUNT * SWING_STEPS);
       let tilt = SWING_TILT * Math.sin(Math.PI * t) * Math.sin(2 * Math.PI * SWING_COUNT * t);
       tilt = tilt < 0 ? tilt / 2 : tilt;
       body.push({ rotate: tilt + "deg", translate: BELLY_RADIUS * tilt * Math.PI / 180 * 100 + "% 0" });
       push.push({ rotate: -Math.max(0, tilt) * SWING_PUSH + "deg", zIndex: tilt > 0 ? -1 : "auto" });
+      paddle.push(-Math.min(0, tilt) * SWING_PUSH);
     }
     tail.animate(push, SWING_COUNT * SWING_PERIOD);
+    flippers.forEach(([flipper, down]) => flipper.animate({ rotate: paddle.map((angle) => down * angle + "deg") }, SWING_COUNT * SWING_PERIOD));
     return spheal.animate(body, SWING_COUNT * SWING_PERIOD).finished.then(() => {
       smile();
       blink();

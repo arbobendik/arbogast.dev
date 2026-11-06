@@ -1,18 +1,24 @@
 "use strict";
 
-// The ocean behind the page: a coarse simulation of the waves on the water, drawn as lines, with a moving mouse or pen
-// pushing it. Lengths are fractions of the window's shorter side, times are in seconds.
+// The ocean behind the page: a coarse simulation of the water's flow and of the waves on it, drawn as broken lines,
+// with a moving mouse or pen stirring it. Lengths are fractions of the window's shorter side, times are in seconds.
 
-// Simulation cells along the shorter side and steps per second.
+// Simulation cells along the shorter side, steps per second and pressure solver iterations per step.
 const OCEAN_CELLS = 128;
 const OCEAN_STEP = 1 / 60;
+const OCEAN_ITERATIONS = 12;
 // Drawn at this fraction of the window's resolution, as the lines are soft anyway, with this many lines along the shorter side.
 const OCEAN_RESOLUTION = .5;
 const OCEAN_LINES = 48;
+// The current all water returns to by this fraction per step, flowing right.
+const OCEAN_CURRENT = [.02, .002];
+const OCEAN_CALM = .005;
 // The wave speed squared in cells per step, and how much of the waves' speed is left after a step.
 const WAVE_SPEED = .05;
 const WAVE_KEEP = .999;
-// How far around the pointer it pushes the water down, and how many line spacings deep, which rises behind it as it moves on.
+// How much of the pointer's speed the water under it takes on per step, how far around it, and how many line spacings
+// deep it pushes the water down, which rises behind it as it moves on.
+const POINTER_GRIP = .2;
 const POINTER_RADIUS = .02;
 const POINTER_DEPTH = 2.25;
 
@@ -21,11 +27,14 @@ const OCEAN_VERTEX = `#version 300 es
 void main() {
   gl_Position = vec4(vec2(gl_VertexID & 1, gl_VertexID >> 1) * 4. - 1., 0, 1);
 }`;
-// The water's height and how fast it changes in the last two channels of each cell of the state.
+// The water's velocity, height and how fast the height changes in each cell of the state, and the pressure and how much
+// the flow squeezes together in each cell of the pressure.
 const OCEAN_COMMON = `#version 300 es
 precision highp float;
 precision highp sampler2D;
 uniform sampler2D state;
+uniform sampler2D pressure;
+uniform float time;
 out vec4 fragColor;
 
 vec4 at(sampler2D field, ivec2 cell) {
@@ -35,8 +44,27 @@ vec4 at(sampler2D field, ivec2 cell) {
 vec4 around(sampler2D field, ivec2 cell) {
   return at(field, cell + ivec2(1, 0)) + at(field, cell - ivec2(1, 0)) + at(field, cell + ivec2(0, 1)) + at(field, cell - ivec2(0, 1));
 }
+
+// Change across a cell, to the right and upwards.
+vec4 dx(sampler2D field, ivec2 cell) {
+  return (at(field, cell + ivec2(1, 0)) - at(field, cell - ivec2(1, 0))) / 2.;
+}
+
+vec4 dy(sampler2D field, ivec2 cell) {
+  return (at(field, cell + ivec2(0, 1)) - at(field, cell - ivec2(0, 1))) / 2.;
+}
+
+float hash(vec2 p) {
+  return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+  vec2 i = floor(p);
+  vec2 f = smoothstep(0., 1., fract(p));
+  return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + 1.), f.x), f.y);
+}
 `;
-// Spreads the water's waves, and lets the pointer push it.
+// Carries the water along its own flow, spreads its waves, and lets the current and the pointer push it.
 const OCEAN_WATER = `
 uniform vec4 pointer;
 
@@ -47,14 +75,43 @@ float finger(vec2 p, vec2 center) {
 void main() {
   ivec2 cell = ivec2(gl_FragCoord.xy);
   vec4 here = at(state, cell);
-  vec4 water = here;
-  water.a = (water.a + float(${WAVE_SPEED}) * (around(state, cell).b - 4. * here.b)) * float(${WAVE_KEEP});
+  vec2 size = vec2(textureSize(state, 0));
+  vec2 back = (gl_FragCoord.xy - here.xy * float(${OCEAN_STEP * OCEAN_CELLS})) / size;
+  vec4 water = texture(state, back);
+  // Spread around where the water came from, as spreading around the cell itself lets fast swirls stir up waves without end.
+  vec2 right = vec2(1, 0) / size;
+  vec2 up = vec2(0, 1) / size;
+  float spread = texture(state, back + right).b + texture(state, back - right).b + texture(state, back + up).b + texture(state, back - up).b;
+  water.a = (water.a + float(${WAVE_SPEED}) * (spread - 4. * water.b)) * float(${WAVE_KEEP});
   water.b += water.a;
+  water.xy = mix(water.xy, vec2(${OCEAN_CURRENT}), float(${OCEAN_CALM}));
   vec2 p = gl_FragCoord.xy / float(${OCEAN_CELLS});
+  water.xy = mix(water.xy, pointer.zw, finger(p, pointer.xy) * float(${POINTER_GRIP}));
   water.b -= float(${POINTER_DEPTH}) * (finger(p, pointer.xy) - finger(p, pointer.xy - pointer.zw * float(${OCEAN_STEP})));
   fragColor = water;
 }`;
-// The water as lines bent by its waves.
+// How much the flow squeezes together, next to the last step's pressure to start solving from.
+const OCEAN_DIVERGENCE = `
+void main() {
+  ivec2 cell = ivec2(gl_FragCoord.xy);
+  fragColor = vec4(at(pressure, cell).r, dx(state, cell).x + dy(state, cell).y, 0, 0);
+}`;
+// One iteration towards the pressure that evens out the squeezing.
+const OCEAN_JACOBI = `
+void main() {
+  ivec2 cell = ivec2(gl_FragCoord.xy);
+  float squeeze = at(pressure, cell).g;
+  fragColor = vec4((around(pressure, cell).r - squeeze) / 4., squeeze, 0, 0);
+}`;
+// Takes the squeezing out of the flow, so the water swirls around what pushes it.
+const OCEAN_PROJECT = `
+void main() {
+  ivec2 cell = ivec2(gl_FragCoord.xy);
+  vec4 water = at(state, cell);
+  water.xy -= vec2(dx(pressure, cell).r, dy(pressure, cell).r);
+  fragColor = water;
+}`;
+// The water as broken lines bent by its waves, the dashes drifting with the current.
 const OCEAN_DRAW = `
 uniform float scale;
 uniform vec2 view;
@@ -75,7 +132,7 @@ float line(float x, float d) {
 void main() {
   vec2 p = gl_FragCoord.xy / scale;
   float y = p.y * float(${OCEAN_LINES}) + height(p);
-  float water = line(y, abs(fract(y - .5) - .5));
+  float water = line(y, abs(fract(y - .5) - .5)) * step(.35, noise(vec2((p.x - time * float(${OCEAN_CURRENT[0]})) * 8., floor(y + .5))));
   fragColor = vec4(color, 1) * water;
 }`;
 
@@ -94,19 +151,23 @@ function drawOcean() {
       gl.attachShader(program, shader);
     });
     gl.linkProgram(program);
+    gl.useProgram(program);
     let uniforms = { program };
     for (let i = 0; i < gl.getProgramParameter(program, gl.ACTIVE_UNIFORMS); i++) {
       let name = gl.getActiveUniform(program, i).name.replace("[0]", "");
       uniforms[name] = gl.getUniformLocation(program, name);
     }
+    gl.uniform1i(uniforms.pressure, 1);
     return uniforms;
   };
-  let programs = { water: compile(OCEAN_WATER), draw: compile(OCEAN_DRAW) };
+  let programs = { water: compile(OCEAN_WATER), divergence: compile(OCEAN_DIVERGENCE), jacobi: compile(OCEAN_JACOBI),
+    project: compile(OCEAN_PROJECT), draw: compile(OCEAN_DRAW) };
 
-  // The simulation covers the window, its state twice, as a pass reads one and writes the other.
+  // The simulation covers the window, each state and pressure twice, as a pass reads one and writes the other.
   let width = 0;
   let height = 0;
   let states = [];
+  let pressures = [];
   let target = (format) => {
     let texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -126,22 +187,26 @@ function drawOcean() {
     canvas.height = innerHeight * OCEAN_RESOLUTION;
     width = Math.round(view[0] * OCEAN_CELLS);
     height = Math.round(view[1] * OCEAN_CELLS);
-    states.forEach(({ texture, framebuffer }) => {
+    [...states, ...pressures].forEach(({ texture, framebuffer }) => {
       gl.deleteTexture(texture);
       gl.deleteFramebuffer(framebuffer);
     });
     states = [target(gl.RGBA16F), target(gl.RGBA16F)];
+    pressures = [target(gl.RG16F), target(gl.RG16F)];
     gl.useProgram(programs.draw.program);
     gl.uniform1f(programs.draw.scale, side * OCEAN_RESOLUTION);
     gl.uniform2fv(programs.draw.view, view);
   };
 
-  // Every pass reads the current state, and writes into the other of the pair, or onto the canvas.
+  // Every pass reads the current state and pressure, and writes into the other of a pair, or onto the canvas.
   let pass = (program, output) => {
     gl.useProgram(program.program);
     gl.bindFramebuffer(gl.FRAMEBUFFER, output ? output.framebuffer : null);
     gl.viewport(0, 0, output ? width : canvas.width, output ? height : canvas.height);
+    gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, states[0].texture);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, pressures[0].texture);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 
@@ -152,6 +217,14 @@ function drawOcean() {
     gl.uniform4fv(programs.water.pointer, pointer);
     pointer = [-1, -1, 0, 0];
     pass(programs.water, states[1]);
+    states.reverse();
+    pass(programs.divergence, pressures[1]);
+    pressures.reverse();
+    for (let i = 0; i < OCEAN_ITERATIONS; i++) {
+      pass(programs.jacobi, pressures[1]);
+      pressures.reverse();
+    }
+    pass(programs.project, states[1]);
     states.reverse();
   };
 
@@ -168,6 +241,8 @@ function drawOcean() {
     let elapsed = Math.min(seconds - lastTime, .1);
     lastTime = seconds;
     for (pending += elapsed; pending >= OCEAN_STEP; pending -= OCEAN_STEP) simulate();
+    gl.useProgram(programs.draw.program);
+    gl.uniform1f(programs.draw.time, seconds);
     pass(programs.draw, null);
     requestAnimationFrame(frame);
   };

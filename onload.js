@@ -29,6 +29,12 @@ const BELLY_RADIUS = .38;
 // How much more the tail bends up than it leans back, as leaning lowers the tail too, so it stays on the ground.
 const SWING_PUSH = 1.5;
 const SMILE_DURATION = 2500;
+// How often it claps its flippers against its belly in a row, how long each clap takes, how far they turn up in degrees
+// and how short they look then, as they swing towards the viewer onto the belly.
+const CLAP_COUNT = 3;
+const CLAP_DURATION = 350;
+const CLAP_ANGLE = 20;
+const CLAP_SCALE = .55;
 // Blur of content below the window in rem, and the fastest it may drop in rem per second.
 const REVEAL_BLUR = 1.5;
 const REVEAL_SPEED = 4;
@@ -133,13 +139,15 @@ function lightScene() {
   requestAnimationFrame(orbit);
 }
 
-// Blinks once or twice after random pauses, swings or smiles after others, rolls or jumps when hovered,
+// Blinks once or twice after random pauses, swings, smiles or claps after others, rolls or jumps when hovered,
 // and smiles and blinks after a swing or a roll.
 function animateSpheal() {
   let spheal = document.getElementById("spheal");
   let tail = document.getElementById("sphealTail");
   let lids = document.querySelectorAll(".lid");
   let mouth = document.getElementById("sphealMouth");
+  // Each flipper with the sign that turns it down, towards the ground.
+  let flippers = [[document.getElementById("sphealFlipper"), 1], [document.getElementById("sphealFlipperBack"), -1]];
 
   let blink = () => {
     let iterations = 1 + Math.floor(Math.random() * 2);
@@ -174,8 +182,13 @@ function animateSpheal() {
     });
   };
 
+  // Claps its flippers up against its belly a few times.
+  let clap = () => Promise.all(flippers.map(([flipper, down]) => flipper.animate(
+    { rotate: ["0deg", -down * CLAP_ANGLE + "deg", "0deg"], scale: ["1", CLAP_SCALE + " 1", "1"] },
+    { duration: CLAP_DURATION, iterations: CLAP_COUNT, easing: "ease-in-out" }).finished));
+
   // After every random pause does one of these, then waits for the next.
-  let idles = [swing, smile];
+  let idles = [swing, smile, clap];
   let idle = () => setTimeout(async () => {
     await idles[Math.floor(Math.random() * idles.length)]();
     idle();

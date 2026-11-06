@@ -212,6 +212,22 @@ li > a {
   transform-origin: 68% 87%;
 }
 
+/* the flippers, each turning about its root, the far one behind the body with its root drawn on under the belly,
+   and behind the near one the body is drawn on as well, so neither leaves a gap when they move */
+.flipper {
+  --down: 1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 55% 85.6%;
+}
+
+#sphealFlipperBack {
+  --down: -1;
+  z-index: -1;
+  transform-origin: 11.7% 80.8%;
+}
+
 /* the snout and the teeth over the same part of the body, so they can move on their own */
 #sphealSnout {
   position: absolute;

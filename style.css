@@ -492,7 +492,7 @@ html[data-theme="dark"] .webIcon::before {
 /* too narrow for two columns, everything follows in one centered column */
 @media (max-width: 62.5rem), (max-aspect-ratio: 143/100) {
   #whoami {
-    padding-bottom: 0;
+    padding-bottom: 5rem;
   }
 
   .subsection, .subsection:nth-of-type(even) {

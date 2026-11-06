@@ -39,6 +39,9 @@ const ICE_BOUNCE = 2;
 const ICE_GRIP = .1;
 const ICE_DRAFT = .19;
 const ICE_CALM = .15;
+// The spheal's sheet reaches this many times its width to either side, and is this many times wider than tall.
+const SEAT_WIDTH = .8;
+const SEAT_FLAT = 2.5;
 // How much of the pointer's speed the water under it takes on per step, how far around it, and how many line spacings
 // deep it pushes the water down, which rises behind it as it moves on.
 const POINTER_GRIP = .2;
@@ -89,9 +92,10 @@ float noise(vec2 p) {
   return mix(mix(hash(i), hash(i + vec2(1, 0)), f.x), mix(hash(i + vec2(0, 1)), hash(i + 1.), f.x), f.y);
 }
 
-// Signed distance to the edge of sheet i, a jagged polygon.
+// Signed distance to the edge of sheet i, a jagged polygon, the first, the spheal's, flattened.
 float edge(vec2 p, int i) {
   p -= sheets[i].xy;
+  if (i == 0) p.y *= float(${SEAT_FLAT});
   float corner = 6.2832 / drifts[i].z;
   float angle = mod(atan(p.y, p.x) + sheets[i].w, corner) - corner / 2.;
   return length(p) - sheets[i].z * cos(corner / 2.) / cos(angle) * (.8 + .4 * noise(normalize(p) * 2. + drifts[i].w));
@@ -100,6 +104,7 @@ float edge(vec2 p, int i) {
 // Carries the water along its own flow, spreads its waves, and lets the current, the pointer and the sheets push it.
 const OCEAN_WATER = `
 uniform vec4 pointer;
+uniform float shift;
 
 float finger(vec2 p, vec2 center) {
   return exp(-dot(p - center, p - center) / float(${POINTER_RADIUS ** 2}));
@@ -111,9 +116,11 @@ float under(vec2 p, int i) {
 
 void main() {
   ivec2 cell = ivec2(gl_FragCoord.xy);
-  vec4 here = at(state, cell);
+  // Moved up by shift cells as the page scrolled, with calm water coming in at the edge.
+  ivec2 from = cell - ivec2(0, int(shift));
+  vec4 here = at(state, from);
   vec2 size = vec2(textureSize(state, 0));
-  vec2 back = (gl_FragCoord.xy - here.xy * float(${OCEAN_STEP * OCEAN_CELLS})) / size;
+  vec2 back = (vec2(from) + .5 - here.xy * float(${OCEAN_STEP * OCEAN_CELLS})) / size;
   vec4 water = texture(state, back);
   // Spread around where the water came from, as spreading around the cell itself lets fast swirls stir up waves without end.
   vec2 right = vec2(1, 0) / size;
@@ -121,6 +128,7 @@ void main() {
   float spread = texture(state, back + right).b + texture(state, back - right).b + texture(state, back + up).b + texture(state, back - up).b;
   water.a = (water.a + float(${WAVE_SPEED}) * (spread - 4. * water.b)) * float(${WAVE_KEEP});
   water.b += water.a;
+  if (from.y < 0 || from.y >= textureSize(state, 0).y) water = vec4(vec2(${OCEAN_CURRENT}), 0, 0);
   water.xy = mix(water.xy, vec2(${OCEAN_CURRENT}), float(${OCEAN_CALM}));
   vec2 p = gl_FragCoord.xy / float(${OCEAN_CELLS});
   float swell = float(${SWELL_HEIGHT}) * sin(time * float(${SWELL_RATE}) - p.y * float(${SWELL_SLANT})) * noise(vec2(p.y * 2., time * .3));
@@ -164,11 +172,14 @@ const OCEAN_DRAW = `
 uniform float scale;
 uniform vec2 view;
 uniform vec3 color;
+uniform float scroll;
+uniform float behind;
 
-// The water's height in line spacings, interpolated smoothly between cells, so the lines bend without kinks.
+// The water's height in line spacings, interpolated smoothly between cells, so the lines bend without kinks, moved up by the
+// cells the water is still behind the page, as it only moves by whole cells.
 float height(vec2 p) {
   vec2 size = vec2(textureSize(state, 0));
-  vec2 cell = p / view * size + .5;
+  vec2 cell = p / view * size + .5 - vec2(0, behind);
   return texture(state, (floor(cell) + smoothstep(0., 1., fract(cell)) - .5) / size).b;
 }
 
@@ -190,7 +201,7 @@ void main() {
     ice = min(ice, edge(lifted, i));
     slab = min(slab, edge(lifted + vec2(0, .01), i));
   }
-  float y = p.y * float(${OCEAN_LINES}) + height(p);
+  float y = (p.y - scroll) * float(${OCEAN_LINES}) + height(p);
   float water = line(y, abs(fract(y - .5) - .5)) * step(.35, noise(vec2((p.x - time * float(${OCEAN_CURRENT[0]})) * 8., floor(y + .5))));
   float hidden = min(ice, slab);
   water *= smoothstep(0., fwidth(hidden), hidden);
@@ -275,8 +286,13 @@ function drawOcean() {
 
   // Where the pointer is and how fast it moved since the last step, far away if it didn't.
   let pointer = [-1, -1, 0, 0];
+  // How many cells the water still has to move up as the page scrolled, moved a whole cell at a time.
+  let shift = 0;
   let simulate = (time) => {
+    let cells = Math.trunc(shift);
+    shift -= cells;
     gl.useProgram(programs.water.program);
+    gl.uniform1f(programs.water.shift, cells);
     gl.uniform1f(programs.water.time, time);
     gl.uniform4fv(programs.water.pointer, pointer);
     pointer = [-1, -1, 0, 0];
@@ -306,11 +322,19 @@ function drawOcean() {
   let sheetData = new Float32Array(ICE_SHEETS * 4);
   let driftData = new Float32Array(ICE_SHEETS * 4);
   let cellAt = (x, cells) => Math.min(Math.max(Math.floor(x * OCEAN_CELLS), 0), cells - 1);
+  // The spheal sits on a larger sheet held in place under it, which scrolls with the page, so through the water at half speed.
+  let spheal = document.getElementById("spheal");
+  let seat = { angle: .3, sides: 7, seed: 42 };
+  let place = {};
+  let measure = () => {
+    let rect = spheal.getBoundingClientRect();
+    place = { x: rect.left + scrollX + .45 * rect.width, y: rect.bottom + scrollY - .1 * rect.height, size: SEAT_WIDTH * rect.width };
+  };
 
-  // New sheets drift in from the left, all follow the water under them, the larger ones slower, bump into each other,
-  // and leave once they are out of sight.
-  let drift = (time, elapsed) => {
-    if (time > nextSheet && sheets.length < ICE_SHEETS) {
+  // New sheets drift in from the left, all follow the water under them, the larger ones slower, move up with it as the page
+  // scrolls by twice as far, bump into each other and into the spheal's sheet, and leave once they are out of sight.
+  let drift = (time, elapsed, scrolled) => {
+    if (time > nextSheet && sheets.length < ICE_SHEETS - 1) {
       spawn(-1.2 * ICE_SIZE_MAX, Math.random() * view[1]);
       nextSheet = time + ICE_PAUSE_MIN + Math.random() * (ICE_PAUSE_MAX - ICE_PAUSE_MIN);
     }
@@ -326,23 +350,32 @@ function drawOcean() {
       sheet.vx += (samples[i * 4] - sheet.vx) * follow;
       sheet.vy += (samples[i * 4 + 1] - sheet.vy) * follow;
       sheet.x += sheet.vx * elapsed;
-      sheet.y += sheet.vy * elapsed;
+      sheet.y += sheet.vy * elapsed + scrolled;
       sheet.angle += sheet.spin * elapsed;
     });
-    sheets.forEach((a, i) => sheets.slice(i + 1).forEach((b) => {
+    // Its speed through the water, nothing when it is first placed.
+    let side = Math.min(innerWidth, innerHeight);
+    let y = (innerHeight - place.y + scrollY) / side;
+    let vy = elapsed && (y - seat.y - scrolled) / elapsed;
+    Object.assign(seat, { x: place.x / side, y, size: place.size / side });
+    let all = [seat, ...sheets];
+    all.forEach((a, i) => all.slice(i + 1).forEach((b) => {
       let dx = b.x - a.x;
       let dy = b.y - a.y;
-      let distance = Math.hypot(dx, dy);
+      // Measured upwards as far as the spheal's sheet is flattened, so floes touch its edge, not its width.
+      let distance = Math.hypot(dx, a === seat ? dy * SEAT_FLAT : dy);
       let push = Math.max(0, .9 * (a.size + b.size) - distance) / distance * ICE_BOUNCE * elapsed;
       a.vx -= dx * push;
       a.vy -= dy * push;
       b.vx += dx * push;
       b.vy += dy * push;
     }));
+    Object.assign(seat, { vx: 0, vy });
     let margin = 2 * ICE_SIZE_MAX;
     sheets = sheets.filter((sheet) => sheet.x > -margin && sheet.x < view[0] + margin && sheet.y > -margin && sheet.y < view[1] + margin);
+    all = [seat, ...sheets];
     for (let i = 0; i < ICE_SHEETS; i++) {
-      let sheet = sheets[i];
+      let sheet = all[i];
       sheetData.set(sheet ? [sheet.x, sheet.y, sheet.size, sheet.angle] : [-10, -10, 0, 0], i * 4);
       driftData.set(sheet ? [sheet.vx, sheet.vy, sheet.sides, sheet.seed] : [0, 0, 3, 0], i * 4);
     }
@@ -361,14 +394,22 @@ function drawOcean() {
   // Steps at a fixed rate whatever the frame rate, catching up at most a tenth of a second.
   let lastTime = 0;
   let pending = 0;
+  let lastScroll = scrollY;
   let frame = (time) => {
     let seconds = time / 1000;
     let elapsed = Math.min(seconds - lastTime, .1);
     lastTime = seconds;
-    drift(seconds, elapsed);
+    // The ocean moves up half as far as the page scrolls.
+    let side = Math.min(innerWidth, innerHeight);
+    let scrolled = (scrollY - lastScroll) / 2 / side;
+    lastScroll = scrollY;
+    shift += scrolled * OCEAN_CELLS;
+    drift(seconds, elapsed, scrolled);
     for (pending += elapsed; pending >= OCEAN_STEP; pending -= OCEAN_STEP) simulate(seconds);
     gl.useProgram(programs.draw.program);
     gl.uniform1f(programs.draw.time, seconds);
+    gl.uniform1f(programs.draw.scroll, scrollY / 2 / side);
+    gl.uniform1f(programs.draw.behind, shift);
     pass(programs.draw, null);
     requestAnimationFrame(frame);
   };
@@ -381,11 +422,14 @@ function drawOcean() {
   });
   window.addEventListener("resize", resize);
   new MutationObserver(paint).observe(document.documentElement, { attributeFilter: ["data-theme"] });
+  // The page changing size may move the spheal.
+  new ResizeObserver(measure).observe(document.body);
   resize();
   paint();
+  measure();
   for (let i = 0; i < ICE_SHEETS / 2; i++) spawn(Math.random() * view[0], Math.random() * view[1]);
   let now = performance.now() / 1000;
-  drift(now, 0);
+  drift(now, 0, 0);
   for (let time = now - OCEAN_WARMUP; time < now; time += OCEAN_STEP) simulate(time);
   requestAnimationFrame(frame);
 }

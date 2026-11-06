@@ -194,6 +194,7 @@ li > a {
 #sphealBody {
   position: relative;
   isolation: isolate;
+  transform-origin: bottom;
 }
 
 #sphealBody > img {
@@ -209,6 +210,14 @@ li > a {
   top: 0;
   left: 0;
   transform-origin: 68% 87%;
+}
+
+/* the snout and the teeth over the same part of the body, so they can move on their own */
+#sphealSnout {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 20% 20.5%;
 }
 
 /* the highlights of the eyes, against the shadow direction so the spheal looks at the light,
@@ -327,6 +336,29 @@ li > a {
   }
   50% {
     transform: translateY(-30%) scale(.95, 1.05);
+  }
+}
+
+/* breathes all the time, puffing out its snout with every breath */
+@media (prefers-reduced-motion: no-preference) {
+  #sphealBody {
+    animation: breathe 4s ease-in-out infinite;
+  }
+
+  #sphealSnout {
+    animation: puff 4s ease-in-out infinite;
+  }
+}
+
+@keyframes breathe {
+  40% {
+    scale: 1.006 1.012;
+  }
+}
+
+@keyframes puff {
+  40% {
+    scale: 1.03;
   }
 }
 

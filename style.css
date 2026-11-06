@@ -189,8 +189,13 @@ li > a {
 
 /* stays put as the hover target, so the moving body can't slip out from under the pointer */
 #spheal {
+  --width: min(20rem, 60vmin);
   flex: none;
-  width: min(20rem, 60vmin);
+  /* centered halfway between the box and its round body at 39% 48% of it, which the tail moves off center */
+  position: relative;
+  left: calc(.055 * var(--width));
+  top: calc(.01 * var(--width) * 730 / 900);
+  width: var(--width);
   /* Antialiasing */
   filter: blur(1px);
   margin: 0 auto;

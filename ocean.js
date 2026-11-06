@@ -298,7 +298,11 @@ function drawOcean() {
   let spawn = (x, y) => sheets.push({ x, y, vx: OCEAN_CURRENT[0], vy: OCEAN_CURRENT[1],
     size: ICE_SIZE_MIN + Math.random() * (ICE_SIZE_MAX - ICE_SIZE_MIN), angle: 2 * Math.PI * Math.random(),
     spin: ICE_SPIN * (2 * Math.random() - 1), sides: 4 + Math.floor(Math.random() * 5), seed: 100 * Math.random() });
-  let sample = new Float32Array(4);
+  // The water under each sheet, read back into a buffer the gpu fills in its own time, so reading it never waits for the gpu.
+  let samples = new Float32Array(ICE_SHEETS * 4);
+  gl.bindBuffer(gl.PIXEL_PACK_BUFFER, gl.createBuffer());
+  gl.bufferData(gl.PIXEL_PACK_BUFFER, samples.byteLength, gl.STREAM_READ);
+  let fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
   let sheetData = new Float32Array(ICE_SHEETS * 4);
   let driftData = new Float32Array(ICE_SHEETS * 4);
   let cellAt = (x, cells) => Math.min(Math.max(Math.floor(x * OCEAN_CELLS), 0), cells - 1);
@@ -310,12 +314,17 @@ function drawOcean() {
       spawn(-1.2 * ICE_SIZE_MAX, Math.random() * view[1]);
       nextSheet = time + ICE_PAUSE_MIN + Math.random() * (ICE_PAUSE_MAX - ICE_PAUSE_MIN);
     }
-    gl.bindFramebuffer(gl.FRAMEBUFFER, states[0].framebuffer);
-    sheets.forEach((sheet) => {
-      gl.readPixels(cellAt(sheet.x, width), cellAt(sheet.y, height), 1, 1, gl.RGBA, gl.FLOAT, sample);
+    if (gl.getSyncParameter(fence, gl.SYNC_STATUS) === gl.SIGNALED) {
+      gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, samples);
+      gl.deleteSync(fence);
+      gl.bindFramebuffer(gl.FRAMEBUFFER, states[0].framebuffer);
+      sheets.forEach((sheet, i) => gl.readPixels(cellAt(sheet.x, width), cellAt(sheet.y, height), 1, 1, gl.RGBA, gl.FLOAT, i * 16));
+      fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
+    }
+    sheets.forEach((sheet, i) => {
       let follow = 1 - Math.exp(-elapsed * ICE_SIZE_MAX / (ICE_INERTIA * sheet.size));
-      sheet.vx += (sample[0] - sheet.vx) * follow;
-      sheet.vy += (sample[1] - sheet.vy) * follow;
+      sheet.vx += (samples[i * 4] - sheet.vx) * follow;
+      sheet.vy += (samples[i * 4 + 1] - sheet.vy) * follow;
       sheet.x += sheet.vx * elapsed;
       sheet.y += sheet.vy * elapsed;
       sheet.angle += sheet.spin * elapsed;

@@ -54,6 +54,45 @@ h1, h2, p, a, li, #dsgvo {
     calc(var(--sx) * .5rem) calc(var(--sy) * .5rem) 2.5rem var(--shadow-dark);
 }
 
+/* the same two shadows, cast by copies of the text behind it instead, see castShadows in onload.js */
+.lit, .lit *, #dsgvo.lit {
+  text-shadow: none;
+}
+
+.lit {
+  isolation: isolate;
+}
+
+h1.lit, h2.lit, p.lit, li.lit {
+  position: relative;
+}
+
+.echo {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  padding: inherit;
+  color: transparent;
+  will-change: transform;
+  text-shadow: 0 0 2.5rem var(--shadow-dark);
+  transform: translate(calc(var(--sx) * .5rem), calc(var(--sy) * .5rem));
+}
+
+.echo.light {
+  text-shadow: 0 0 2.5rem var(--light);
+  transform: translate(calc(var(--sx) * -.5rem), calc(var(--sy) * -.5rem));
+}
+
+.echo * {
+  color: transparent;
+  text-shadow: inherit;
+}
+
+/* a copy keeps the room of an icon in front of its text, but not the icon */
+.echo::before, .echo *::before {
+  visibility: hidden;
+}
+
 h1, h2 {
   font-size: 1.5em;
   min-height: 1.2em;
@@ -79,7 +118,7 @@ ul {
   list-style: none;
 }
 
-li > a {
+li a {
   transition: color .3s ease-in-out;
   font-size: 1.5rem;
 }
@@ -498,7 +537,7 @@ html[data-theme="dark"] .webIcon::before {
   line-height: 3rem;
 }
 
-#nav > a {
+#nav a {
   margin-left: 1rem;
   text-decoration: none;
 }

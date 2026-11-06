@@ -81,7 +81,7 @@ function typeHeader(element) {
     observer.disconnect();
     for (let i = 0; i < header.length; i++) {
       setTimeout(() => {
-        element.textContent += "_";
+        element.textContent = header.slice(0, i) + "_";
       }, TYPING_START + TYPING_INTERVAL * i);
       setTimeout(() => {
         element.textContent = header.slice(0, i + 1);
@@ -89,6 +89,40 @@ function typeHeader(element) {
     }
   });
   observer.observe(element);
+}
+
+// Lit text casts its two shadows from copies of itself behind it, each on a layer of its own, so a moving light only moves
+// them, where it would otherwise paint the text and its wide blurred shadows again, which phones can't keep up with.
+function castShadows() {
+  let cast = (text) => {
+    text.querySelectorAll(":scope > .echo").forEach((echo) => echo.remove());
+    let nodes = Array.from(text.childNodes);
+    for (let name of ["echo", "echo light"]) {
+      let echo = document.createElement("div");
+      echo.className = [name, ...Array.from(text.classList).filter((c) => c !== "lit")].join(" ");
+      echo.inert = true;
+      echo.append(...nodes.map((node) => node.cloneNode(true)));
+      echo.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+      text.append(echo);
+    }
+  };
+
+  // Text that changes, as it is typed or revealed, is copied again, changes that are only its copies are not.
+  let changes = new MutationObserver((mutations) => {
+    let changed = new Set();
+    for (let mutation of mutations) {
+      let nodes = [...mutation.addedNodes, ...mutation.removedNodes];
+      if (nodes.length && nodes.every((node) => node.classList?.contains("echo"))) continue;
+      let element = mutation.target.nodeType === Node.ELEMENT_NODE ? mutation.target : mutation.target.parentElement;
+      if (!element.closest(".echo")) changed.add(element.closest(".lit"));
+    }
+    changed.forEach(cast);
+  });
+  document.querySelectorAll("h1, h2, p, li, #nav, #dsgvo").forEach((text) => {
+    text.classList.add("lit");
+    cast(text);
+    changes.observe(text, { childList: true, characterData: true, subtree: true });
+  });
 }
 
 // The pointer is a point light, every shadow on the page is cast away from it.
@@ -342,6 +376,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
       if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
         Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);
+        castShadows();
         lightScene();
         animateSpheal();
         revealContent();

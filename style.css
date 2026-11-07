@@ -557,7 +557,9 @@ html[data-theme="dark"] .webIcon::before {
   text-decoration: none;
 }
 
+/* like the gallery's images: rounded, glowing in its own color and growing a little when hovered */
 .button {
+  --glow: #aaa;
   width: 3rem;
   height: 3rem;
   display: grid;
@@ -565,10 +567,16 @@ html[data-theme="dark"] .webIcon::before {
   align-items: center;
   overflow: hidden;
   border: none;
+  border-radius: .25rem;
   padding: 0;
   cursor: pointer;
-  background-color: #aaa;
-  box-shadow: calc(var(--sx) * .4rem) calc(var(--sy) * .4rem) 1rem var(--shadow-dark);
+  background-color: var(--glow);
+  box-shadow: 0 0 .75rem var(--glow);
+  transition: transform .3s ease-in-out;
+}
+
+.button:hover {
+  transform: scale(1.06);
 }
 
 #darkMode {
@@ -584,8 +592,9 @@ html[data-theme="dark"] .webIcon::before {
 }
 
 .gitHubIcon {
+  --glow: #000;
   width: 3rem;
-  background-color: #000;
+  background-color: var(--glow);
 }
 
 #background {

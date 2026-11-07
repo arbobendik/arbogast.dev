@@ -13,6 +13,8 @@ const OCEAN_WARMUP = 10;
 // Drawn at this fraction of the window's resolution, as the lines are soft anyway, with this many lines along the shorter side.
 const OCEAN_RESOLUTION = .5;
 const OCEAN_LINES = 30;
+// How far the ocean reaches above and below the window, as a fraction of its height, so scrolling ahead of it never shows its end.
+const OCEAN_OVERSCAN = .25;
 // The current all water returns to by this fraction per step, flowing right, so sheets come in from the left.
 const OCEAN_CURRENT = [.02, .002];
 const OCEAN_CALM = .005;
@@ -258,11 +260,14 @@ function drawOcean() {
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
     return { texture, framebuffer };
   };
+  let reach = 0;
   let resize = () => {
     let side = Math.min(innerWidth, innerHeight);
-    view = [innerWidth / side, innerHeight / side];
+    reach = innerHeight * OCEAN_OVERSCAN;
+    view = [innerWidth / side, (innerHeight + 2 * reach) / side];
     canvas.width = innerWidth * OCEAN_RESOLUTION;
-    canvas.height = innerHeight * OCEAN_RESOLUTION;
+    canvas.height = (innerHeight + 2 * reach) * OCEAN_RESOLUTION;
+    canvas.style.height = innerHeight + 2 * reach + "px";
     width = Math.round(view[0] * OCEAN_CELLS);
     height = Math.round(view[1] * OCEAN_CELLS);
     [...states, ...pressures].forEach(({ texture, framebuffer }) => {
@@ -359,7 +364,7 @@ function drawOcean() {
     });
     // Its speed through the water, nothing when it is first placed.
     let side = Math.min(innerWidth, innerHeight);
-    let y = (innerHeight - place.y + scrollY) / side;
+    let y = (innerHeight + reach - place.y + scrollY) / side;
     let vy = elapsed && (y - seat.y - scrolled) / elapsed;
     Object.assign(seat, { x: place.x / side, y, size: place.size / side });
     let all = [seat, ...sheets];
@@ -415,13 +420,16 @@ function drawOcean() {
     gl.uniform1f(programs.draw.scroll, scrollY / 2 / side);
     gl.uniform1f(programs.draw.behind, shift);
     pass(programs.draw, null);
+    // Scrolls with the page, put back over the window as it is drawn, so whatever scrolls the page ahead of the drawing
+    // moves the spheal's sheet along with the spheal.
+    canvas.style.transform = `translateY(${scrollY - reach}px)`;
     requestAnimationFrame(frame);
   };
 
   window.addEventListener("pointermove", (event) => {
     if (event.pointerType === "touch") return;
     let side = Math.min(innerWidth, innerHeight);
-    pointer = [event.clientX / side, (innerHeight - event.clientY) / side,
+    pointer = [event.clientX / side, (innerHeight + reach - event.clientY) / side,
       pointer[2] + event.movementX / side / OCEAN_STEP, pointer[3] - event.movementY / side / OCEAN_STEP];
   });
   window.addEventListener("resize", resize);

@@ -13,6 +13,9 @@ const OCEAN_WARMUP = 10;
 // Drawn at this fraction of the window's resolution, as the lines are soft anyway, with this many lines along the shorter side.
 const OCEAN_RESOLUTION = .5;
 const OCEAN_LINES = 30;
+// How strongly the lines show, faint enough to stay behind the text, and how far the light reaches, per shorter side.
+const OCEAN_INK = .13;
+const OCEAN_GLOW = .6;
 // How far the ocean reaches above and below the window, as a fraction of its height, so scrolling ahead of it never shows its end.
 const OCEAN_OVERSCAN = .25;
 // The current all water returns to by this fraction per step, flowing right, so sheets come in from the left.
@@ -169,11 +172,15 @@ void main() {
   water.xy -= vec2(dx(pressure, cell).r, dy(pressure, cell).r);
   fragColor = water;
 }`;
-// The water as broken lines bent by its waves, the dashes drifting with the current, and the sheets as outlined slabs riding them.
+// The water as broken lines bent by its waves, the dashes drifting with the current, and the sheets as outlined slabs riding them,
+// over the water's tone lit by the lamp.
 const OCEAN_DRAW = `
 uniform float scale;
 uniform vec2 view;
 uniform vec3 color;
+uniform vec3 tone;
+uniform vec3 glow;
+uniform vec2 lamp;
 uniform float scroll;
 uniform float behind;
 
@@ -211,12 +218,16 @@ void main() {
   float water = line(y, abs(fract(y - .5) - .5)) * step(.35, noise(vec2((p.x - time * float(${OCEAN_CURRENT[0]})) * 8., floor(y + .5))));
   float hidden = min(ice, slab);
   water *= smoothstep(0., fwidth(hidden), hidden);
-  fragColor = vec4(color, 1) * max(water, max(line(ice, abs(ice)), line(slab, abs(slab)) * step(0., ice)));
+  float ink = float(${OCEAN_INK}) * max(water, max(line(ice, abs(ice)), line(slab, abs(slab)) * step(0., ice)));
+  // Fading out away from the lamp, shaken by up to a step of the 8 bits it ends up in, so it fades without bands.
+  float lit = max(0., 1. - length(p - lamp) / float(${OCEAN_GLOW}));
+  vec3 lighting = mix(tone, glow, lit) + (hash(gl_FragCoord.xy) - hash(gl_FragCoord.yx)) / 255.;
+  fragColor = vec4(mix(lighting, color, ink), 1);
 }`;
 
-// Simulates on the gpu and reads the water under each sheet back, so the sheets drift with it, drawn in the canvas' CSS color,
-// so it follows the theme.
-function drawOcean() {
+// Simulates on the gpu and reads the water under each sheet back, so the sheets drift with it, drawn in the canvas' CSS colors,
+// so it follows the theme, lit by the light lightScene moves.
+function drawOcean(light) {
   let canvas = document.getElementById("ocean");
   let gl = canvas.getContext("webgl2");
   if (!gl || !gl.getExtension("EXT_color_buffer_float")) return;
@@ -402,9 +413,12 @@ function drawOcean() {
     });
   };
 
+  // The lines in the canvas' color, the water in its background color, and the light in its border color.
   let paint = () => {
+    let style = getComputedStyle(canvas);
     gl.useProgram(programs.draw.program);
-    gl.uniform3fv(programs.draw.color, getComputedStyle(canvas).color.match(/\d+/g).map((c) => c / 255));
+    [["color", style.color], ["tone", style.backgroundColor], ["glow", style.borderTopColor]]
+      .forEach(([name, value]) => gl.uniform3fv(programs.draw[name], value.match(/\d+/g).map((c) => c / 255)));
   };
 
   // Steps at a fixed rate whatever the frame rate, catching up at most a tenth of a second.
@@ -425,6 +439,7 @@ function drawOcean() {
     gl.useProgram(programs.draw.program);
     gl.uniform1f(programs.draw.time, seconds);
     gl.uniform1f(programs.draw.scroll, scrollY / 2 / side);
+    gl.uniform2f(programs.draw.lamp, light.x / side, (innerHeight + reach - light.y) / side);
     gl.uniform1f(programs.draw.behind, shift);
     pass(programs.draw, null);
     // Scrolls with the page, put back over the window as it is drawn, so whatever scrolls the page ahead of the drawing

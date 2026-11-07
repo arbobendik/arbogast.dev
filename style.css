@@ -598,17 +598,6 @@ html[data-theme="dark"] .webIcon::before {
   background-color: var(--tone);
 }
 
-/* the light, centered on the top left corner and moved by onload.js, so moving it never repaints */
-#light {
-  position: fixed;
-  top: -60vmin;
-  left: -60vmin;
-  width: 120vmin;
-  height: 120vmin;
-  background: radial-gradient(circle closest-side, var(--light), transparent);
-  will-change: transform;
-}
-
 /* spans the page and cuts the ocean off where the page ends, so the ocean reaching past the window never lengthens the page */
 #sea {
   z-index: -1;
@@ -617,7 +606,8 @@ html[data-theme="dark"] .webIcon::before {
   overflow: clip;
 }
 
-/* drawn by ocean.js in its color, faint enough to stay behind the text, scrolled with the page and moved back over the window */
+/* drawn by ocean.js, lines in its color on water in its background color, lit in its border color, which no border shows,
+   scrolled with the page and moved back over the window */
 #ocean {
   position: absolute;
   top: 0;
@@ -625,7 +615,8 @@ html[data-theme="dark"] .webIcon::before {
   width: 100%;
   will-change: transform;
   color: var(--text);
-  opacity: .13;
+  background-color: var(--tone);
+  border-color: var(--light);
 }
 
 #dsgvo {

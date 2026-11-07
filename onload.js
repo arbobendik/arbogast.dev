@@ -127,9 +127,9 @@ function castShadows() {
   });
 }
 
-// The pointer is a point light, every shadow on the page is cast away from it.
+// A point light orbits the window, every shadow on the page is cast away from it. Returns where it is, for drawOcean to draw it.
 function lightScene() {
-  let light = document.getElementById("light");
+  let light = { x: 0, y: 0 };
   let elements = Array.from(document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo, #spheal"));
   let spheal = elements.indexOf(document.getElementById("spheal"));
   let x = 0;
@@ -157,12 +157,12 @@ function lightScene() {
     frame = 0;
     let range = LIGHT_RANGE * Math.min(innerWidth, innerHeight);
     let swinging = "swing" in elements[spheal].dataset;
-    // Measure before writing any style, the light included, so measuring needs no extra layout.
+    // Measure before writing any style, so measuring needs no extra layout.
     if (stale) elements.forEach((element, i) => measure(i));
     else if (swinging || swung) measure(spheal);
     stale = false;
     swung = swinging;
-    light.style.transform = "translate(" + x + "px, " + y + "px)";
+    Object.assign(light, { x, y });
     elements.forEach((element, i) => {
       let place = places[i];
       let left = place.fixed ? 0 : scrollX;
@@ -205,6 +205,7 @@ function lightScene() {
   let resizes = new ResizeObserver(() => stale = true);
   [...elements, ...document.getElementsByClassName("subsection"), document.body].forEach((element) => resizes.observe(element));
   requestAnimationFrame(orbit);
+  return light;
 }
 
 // Blinks once or twice after random pauses, swings, smiles or claps after others, rolls or jumps when hovered,
@@ -373,8 +374,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
         Array.from(document.getElementsByClassName("typed")).forEach(typeHeader);
         castShadows();
-        lightScene();
-        drawOcean();
+        drawOcean(lightScene());
         animateSpheal();
         revealContent();
       }

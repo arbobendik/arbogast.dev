@@ -426,12 +426,21 @@ function drawOcean() {
     requestAnimationFrame(frame);
   };
 
-  window.addEventListener("pointermove", (event) => {
-    if (event.pointerType === "touch") return;
+  let push = (x, y, dx, dy) => {
     let side = Math.min(innerWidth, innerHeight);
-    pointer = [event.clientX / side, (innerHeight + reach - event.clientY) / side,
-      pointer[2] + event.movementX / side / OCEAN_STEP, pointer[3] - event.movementY / side / OCEAN_STEP];
+    pointer = [x / side, (innerHeight + reach - y) / side, pointer[2] + dx / side / OCEAN_STEP, pointer[3] - dy / side / OCEAN_STEP];
+  };
+  window.addEventListener("pointermove", (event) => {
+    if (event.pointerType !== "touch") push(event.clientX, event.clientY, event.movementX, event.movementY);
   });
+  // Fingers are followed by touch events, as their pointer events stop once they scroll the page.
+  let touch = [];
+  window.addEventListener("touchstart", (event) => touch = [event.touches[0].clientX, event.touches[0].clientY], { passive: true });
+  window.addEventListener("touchmove", (event) => {
+    let { clientX, clientY } = event.touches[0];
+    push(clientX, clientY, clientX - touch[0], clientY - touch[1]);
+    touch = [clientX, clientY];
+  }, { passive: true });
   window.addEventListener("resize", resize);
   new MutationObserver(paint).observe(document.documentElement, { attributeFilter: ["data-theme"] });
   // The page changing size may move the spheal.

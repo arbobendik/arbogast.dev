@@ -190,11 +190,15 @@ float line(float x, float d) {
 
 void main() {
   vec2 p = gl_FragCoord.xy / scale;
-  float ice = 1e3;
-  float slab = 1e3;
+  // Edges further than .02 away all count as .02 away, so far from every sheet nothing is worked out.
+  float ice = .02;
+  float slab = .02;
   for (int i = 0; i < ${ICE_SHEETS}; i++) {
     // Rides the waves averaged over its size, so larger sheets heave less.
     vec4 sheet = sheets[i];
+    // Its edge reaches at most 1.2 sizes from its middle, lifted by the waves at most .1, its slab .01 below that.
+    float squash = i == 0 ? float(${SEAT_FLAT}) : 1.;
+    if (length((p - sheet.xy) * vec2(1, squash)) - 1.2 * sheet.z > .13 * squash) continue;
     float heave = height(sheet.xy) + height(sheet.xy + vec2(sheet.z, 0)) + height(sheet.xy - vec2(sheet.z, 0))
       + height(sheet.xy + vec2(0, sheet.z)) + height(sheet.xy - vec2(0, sheet.z));
     vec2 lifted = p + vec2(0, heave / 5. / float(${OCEAN_LINES}));

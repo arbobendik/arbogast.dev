@@ -51,7 +51,7 @@ const ICE_GRIP = .01;
 const ICE_DRAFT = .19;
 const ICE_CALM = .15;
 // The spheal's sheet reaches this many times its width to either side, and is this many times wider than tall.
-const SEAT_WIDTH = 1.6;
+const SEAT_WIDTH = 1.28;
 const SEAT_FLAT = 2.5;
 // How much of the pointer's speed the water under it takes on per step, how far around it, and how many line spacings
 // deep it pushes the water down, which rises behind it as it moves on.
@@ -108,8 +108,14 @@ float edge(vec2 p, int i) {
   p -= sheets[i].xy;
   if (i == 0) p.y *= float(${SEAT_FLAT});
   float corner = 6.2832 / drifts[i].z;
-  float angle = mod(atan(p.y, p.x) + sheets[i].w, corner) - corner / 2.;
-  return length(p) - sheets[i].z * cos(corner / 2.) / cos(angle) * (.8 + .4 * noise(normalize(p) * 2. + drifts[i].w));
+  // The spheal's turned on its left to the nearest turn with an edge there, and less jagged there, as its flattening sharpens
+  // a corner, or a dent between two, into tips.
+  float left = i == 0 ? 1. - smoothstep(-.5, .3, normalize(p).x) : 0.;
+  float side = corner / 2. - 3.1416;
+  side += corner * round((sheets[i].w - side) / corner);
+  float angle = mod(atan(p.y, p.x) + mix(sheets[i].w, side, left), corner) - corner / 2.;
+  float jag = mix(.4, .1, left);
+  return length(p) - sheets[i].z * cos(corner / 2.) / cos(angle) * (1. - jag / 2. + jag * noise(normalize(p) * 2. + drifts[i].w));
 }
 `;
 // Carries the water along its own flow, spreads its waves, and lets the current, the pointer and the sheets push it.

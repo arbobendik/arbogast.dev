@@ -130,7 +130,7 @@ function castShadows() {
 // A point light orbits the window, every shadow on the page is cast away from it. Returns where it is, for drawOcean to draw it.
 function lightScene() {
   let light = { x: 0, y: 0 };
-  let elements = Array.from(document.querySelectorAll("h1, h2, p, li, .button, #name, #nav, #dsgvo, #spheal"));
+  let elements = Array.from(document.querySelectorAll("h1, h2, p, li, #name, #nav, #dsgvo, #spheal"));
   let spheal = elements.indexOf(document.getElementById("spheal"));
   let x = 0;
   let y = 0;

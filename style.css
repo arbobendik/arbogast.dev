@@ -383,16 +383,19 @@ li a {
   transform-origin: 39% 48%;
 }
 
-/* turns around the center of the round body, towards where it faces */
+/* turns around the center of the round body, rolling a little towards where it faces, turns around, rolls back
+   and turns to face where it did before, each later animation holding its end over the earlier ones */
 #spheal[data-trick="roll"] > #sphealBody {
-  animation: roll calc(var(--turns) * .5s) ease-in-out .3s;
+  --roll: calc(var(--turns) * .5s);
+  animation: roll var(--roll) ease-in-out .3s forwards, face .4s linear calc(.3s + var(--roll)) forwards,
+    roll-back var(--roll) ease-in-out calc(.7s + var(--roll)) forwards, face .4s linear calc(.7s + 2 * var(--roll)) reverse forwards;
   transform-origin: 39% 48%;
 }
 
 /* tucked in before the spin and back out after it */
 #spheal[data-trick="roll"] #sphealTail {
   z-index: -1;
-  animation: tuck .3s ease-in forwards, untuck .3s ease-out calc(.3s + var(--turns) * .5s) forwards;
+  animation: tuck .3s ease-in forwards, untuck .3s ease-out calc(1.1s + var(--turns) * 1s) forwards;
 }
 
 #spheal[data-trick="jump"] > #sphealBody {
@@ -413,7 +416,38 @@ li a {
 
 @keyframes roll {
   to {
-    transform: rotate(calc(var(--turns) * -360deg));
+    rotate: calc(var(--turns) * -360deg);
+    translate: -50% 0;
+  }
+}
+
+/* turns its face towards the viewer and on around, hopping, past where a flat image would show its edge, as a round body
+   turning stays about as wide */
+@keyframes face {
+  0% {
+    animation-timing-function: ease-in;
+    transform: perspective(calc(4 * var(--width))) translateY(0) rotateY(0deg);
+  }
+  49.9% {
+    transform: perspective(calc(4 * var(--width))) translateY(-8%) rotateY(45deg);
+  }
+  50% {
+    animation-timing-function: ease-out;
+    transform: perspective(calc(4 * var(--width))) translateY(-8%) rotateY(135deg);
+  }
+  100% {
+    transform: perspective(calc(4 * var(--width))) translateY(0) rotateY(180deg);
+  }
+}
+
+@keyframes roll-back {
+  from {
+    rotate: calc(var(--turns) * -360deg);
+    translate: -50% 0;
+  }
+  to {
+    rotate: 0deg;
+    translate: 0 0;
   }
 }
 

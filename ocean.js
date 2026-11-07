@@ -386,9 +386,10 @@ function drawOcean(light) {
   // Its canvas, on the page around where it can reach: 1.2 sizes sideways, as far up and down as it is flattened, and the most
   // the waves lift it by, .1, and its slab lies below, .01, with a little room for its outline.
   let box = {};
+  // Centered halfway along its roll, which takes it half its width to the left.
   let measure = () => {
     let rect = spheal.getBoundingClientRect();
-    place = { x: rect.left + scrollX + .45 * rect.width, y: rect.bottom + scrollY - .1 * rect.height, size: SEAT_WIDTH * rect.width };
+    place = { x: rect.left + scrollX + .2 * rect.width, y: rect.bottom + scrollY - .1 * rect.height, size: SEAT_WIDTH * rect.width };
     let side = Math.min(innerWidth, innerHeight);
     let density = Math.min(devicePixelRatio, OCEAN_DENSITY);
     let across = 1.2 * place.size + 4;

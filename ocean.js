@@ -10,8 +10,10 @@ const OCEAN_STEP = 1 / 60;
 const OCEAN_ITERATIONS = 12;
 // Seconds simulated before the ocean is first drawn, so the swell has already rolled in.
 const OCEAN_WARMUP = 10;
-// Drawn at this fraction of the window's resolution, as the lines are soft anyway, with this many lines along the shorter side.
-const OCEAN_RESOLUTION = .5;
+// Drawn at the screen's own resolution, but at most OCEAN_DENSITY pixels per CSS pixel, its lines fading out over
+// OCEAN_LINE_WIDTH CSS pixels to either side, with this many lines along the shorter side.
+const OCEAN_DENSITY = 2;
+const OCEAN_LINE_WIDTH = 2;
 const OCEAN_LINES = 30;
 // How strongly the lines show, faint enough to stay behind the text, and how far the light reaches, per shorter side.
 const OCEAN_INK = .13;
@@ -176,6 +178,7 @@ void main() {
 // over the water's tone lit by the lamp.
 const OCEAN_DRAW = `
 uniform float scale;
+uniform float density;
 uniform vec2 view;
 uniform vec3 color;
 uniform vec3 tone;
@@ -194,7 +197,7 @@ float height(vec2 p) {
 
 // A line about a pixel wide where the distance d from it, measured in x, is zero.
 float line(float x, float d) {
-  return 1. - smoothstep(0., fwidth(x), d);
+  return 1. - smoothstep(0., fwidth(x) * density * float(${OCEAN_LINE_WIDTH}), d);
 }
 
 void main() {
@@ -276,8 +279,9 @@ function drawOcean(light) {
     let side = Math.min(innerWidth, innerHeight);
     reach = innerHeight * OCEAN_OVERSCAN;
     view = [innerWidth / side, (innerHeight + 2 * reach) / side];
-    canvas.width = innerWidth * OCEAN_RESOLUTION;
-    canvas.height = (innerHeight + 2 * reach) * OCEAN_RESOLUTION;
+    let density = Math.min(devicePixelRatio, OCEAN_DENSITY);
+    canvas.width = innerWidth * density;
+    canvas.height = (innerHeight + 2 * reach) * density;
     canvas.style.height = innerHeight + 2 * reach + "px";
     width = Math.round(view[0] * OCEAN_CELLS);
     height = Math.round(view[1] * OCEAN_CELLS);
@@ -288,7 +292,8 @@ function drawOcean(light) {
     states = [target(gl.RGBA16F), target(gl.RGBA16F)];
     pressures = [target(gl.RG16F), target(gl.RG16F)];
     gl.useProgram(programs.draw.program);
-    gl.uniform1f(programs.draw.scale, side * OCEAN_RESOLUTION);
+    gl.uniform1f(programs.draw.scale, side * density);
+    gl.uniform1f(programs.draw.density, density);
     gl.uniform2fv(programs.draw.view, view);
   };
 

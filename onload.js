@@ -14,8 +14,9 @@ const BLINK_DURATION = 200;
 const BLINK_PAUSE_MIN = 3000;
 const BLINK_PAUSE_MAX = 8000;
 const SPHEAL_TRICKS = ["roll", "jump"];
-const ROLL_TURNS_MIN = 3;
-const ROLL_TURNS_MAX = 8;
+// Turns it rolls away, and as many back.
+const ROLL_TURNS_MIN = 2;
+const ROLL_TURNS_MAX = 4;
 // Pause before each idle animation, which is picked at random.
 const IDLE_PAUSE_MIN = 6000;
 const IDLE_PAUSE_MAX = 14000;

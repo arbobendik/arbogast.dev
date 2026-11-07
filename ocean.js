@@ -36,9 +36,9 @@ const ICE_PAUSE_MAX = 35;
 const ICE_SIZE_MIN = .04;
 const ICE_SIZE_MAX = .12;
 const ICE_SPIN = .05;
-const ICE_INERTIA = 2;
+const ICE_INERTIA = .5;
 const ICE_BOUNCE = 2;
-const ICE_GRIP = .1;
+const ICE_GRIP = .01;
 const ICE_DRAFT = .19;
 const ICE_CALM = .15;
 // The spheal's sheet reaches this many times its width to either side, and is this many times wider than tall.
@@ -295,6 +295,8 @@ function drawOcean() {
 
   // Where the pointer is and how fast it moved since the last step, far away if it didn't.
   let pointer = [-1, -1, 0, 0];
+  // The sheet the pointer holds, where on it, and where the pointer is, or nothing.
+  let held = null;
   // How many cells the water still has to move up as the page scrolled, moved a whole cell at a time.
   let shift = 0;
   let simulate = (time) => {
@@ -358,6 +360,11 @@ function drawOcean() {
       let follow = 1 - Math.exp(-elapsed * ICE_SIZE_MAX / (ICE_INERTIA * sheet.size));
       sheet.vx += (samples[i * 4] - sheet.vx) * follow;
       sheet.vy += (samples[i * 4 + 1] - sheet.vy) * follow;
+      // A held sheet goes where it is held, as fast as it takes to get there, so it pushes the water and other sheets.
+      if (sheet === held?.sheet) {
+        sheet.vx = elapsed && (held.x + held.dx - sheet.x) / elapsed;
+        sheet.vy = elapsed && (held.y + held.dy - sheet.y - scrolled) / elapsed;
+      }
       sheet.x += sheet.vx * elapsed;
       sheet.y += sheet.vy * elapsed + scrolled;
       sheet.angle += sheet.spin * elapsed;
@@ -441,6 +448,20 @@ function drawOcean() {
     push(clientX, clientY, clientX - touch[0], clientY - touch[1]);
     touch = [clientX, clientY];
   }, { passive: true });
+  // Sheets are dragged, except the spheal's, held where they were taken, a held one taking no clicks or text selection.
+  let spot = (event) => {
+    let side = Math.min(innerWidth, innerHeight);
+    return { x: event.clientX / side, y: (innerHeight + reach - event.clientY) / side };
+  };
+  window.addEventListener("pointerdown", (event) => {
+    let { x, y } = spot(event);
+    let sheet = sheets.find((sheet) => Math.hypot(x - sheet.x, y - sheet.y) < sheet.size);
+    if (!sheet || event.target.closest("a, button")) return;
+    event.preventDefault();
+    held = { sheet, dx: sheet.x - x, dy: sheet.y - y, x, y };
+  });
+  window.addEventListener("pointermove", (event) => held && Object.assign(held, spot(event)));
+  ["pointerup", "pointercancel"].forEach((type) => window.addEventListener(type, () => held = null));
   window.addEventListener("resize", resize);
   new MutationObserver(paint).observe(document.documentElement, { attributeFilter: ["data-theme"] });
   // The page changing size may move the spheal.

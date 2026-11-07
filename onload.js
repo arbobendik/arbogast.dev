@@ -6,6 +6,8 @@ const TYPING_INTERVAL = 100;
 // Distance from the light, as a fraction of vmin, at which shadows reach full length.
 const LIGHT_RANGE = .5;
 const LIGHT_ORBIT_PERIOD = 20000;
+// How far the light strays from its orbit along a smooth, irregular path, as a fraction of the window.
+const LIGHT_WANDER = .05;
 // Shadows only repaint when their direction crosses one of these steps per unit, too small to see.
 const SHADOW_STEPS = 8;
 const BLINK_DURATION = 200;
@@ -133,7 +135,6 @@ function lightScene() {
   let x = 0;
   let y = 0;
   let frame = 0;
-  let following = false;
 
   // The shadow direction last written to each element, so only changes are written.
   let shadows = elements.map(() => ({ sx: null, sy: null }));
@@ -183,23 +184,18 @@ function lightScene() {
     if (!frame) frame = requestAnimationFrame(update);
   };
 
-  // The light orbits the viewport, starting top left, until a mouse or pen takes it.
+  // The light orbits the viewport, starting top left, wandering off it by sines whose periods never line up.
+  let wander = (t) => .6 * Math.sin(t * .9) + .4 * Math.sin(t * 2.3 + 1);
   let orbit = (time) => {
-    if (following) return;
     let angle = 2 * Math.PI * time / LIGHT_ORBIT_PERIOD + 1.25 * Math.PI;
-    x = innerWidth * (.5 + .4 * Math.cos(angle));
-    y = innerHeight * (.5 + .4 * Math.sin(angle));
+    x = innerWidth * (.5 + .4 * Math.cos(angle) + LIGHT_WANDER * wander(time / 1000));
+    y = innerHeight * (.5 + .4 * Math.sin(angle) + LIGHT_WANDER * wander(time / 1000 + 7));
     // This update covers any a scroll or resize queued for the same frame.
     cancelAnimationFrame(frame);
     update();
     requestAnimationFrame(orbit);
   };
 
-  window.addEventListener("pointermove", (event) => {
-    if (event.pointerType === "touch") return;
-    following = true;
-    moveLight(event.clientX, event.clientY);
-  });
   window.addEventListener("scroll", () => moveLight(x, y));
   window.addEventListener("resize", () => {
     stale = true;

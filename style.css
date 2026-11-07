@@ -607,7 +607,7 @@ html[data-theme="dark"] .webIcon::before {
   background-color: var(--tone);
 }
 
-/* spans the page and cuts the ocean off where the page ends, so the ocean reaching past the window never lengthens the page */
+/* spans the page, holding the spheal's sheet where it lies on the page, and cuts it off where the page ends */
 #sea {
   z-index: -1;
   position: absolute;
@@ -616,9 +616,10 @@ html[data-theme="dark"] .webIcon::before {
 }
 
 /* drawn by ocean.js, lines in its color on water in its background color, lit in its border color, which no border shows,
-   scrolled with the page and moved back over the window */
+   fixed over the window and moved up at half the scroll speed by the browser where it can, ocean.js putting it back as it draws */
 #ocean {
-  position: absolute;
+  z-index: -1;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -626,6 +627,25 @@ html[data-theme="dark"] .webIcon::before {
   color: var(--text);
   background-color: var(--tone);
   border-color: var(--light);
+}
+
+@supports (animation-timeline: scroll()) {
+  #ocean {
+    animation: sea linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 100000px;
+  }
+}
+
+@keyframes sea {
+  to {
+    transform: translateY(-50000px);
+  }
+}
+
+/* the spheal's sheet, drawn by ocean.js, which places it under the spheal */
+#seat {
+  position: absolute;
 }
 
 #dsgvo {

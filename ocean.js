@@ -20,6 +20,10 @@ const OCEAN_INK = .13;
 const OCEAN_GLOW = .6;
 // How far the ocean reaches above and below the window, as a fraction of its height, so scrolling ahead of it never shows its end.
 const OCEAN_OVERSCAN = .25;
+// Seconds the page has to rest after scrolling before the water under the sheets is read back again, and between two readings,
+// as each waits on the gpu, while the sheets take longer than that to follow the water anyway.
+const OCEAN_REST = .25;
+const OCEAN_READ_PAUSE = .2;
 // The current all water returns to by this fraction per step, flowing right, so sheets come in from the left.
 const OCEAN_CURRENT = [.02, .002];
 const OCEAN_CALM = .005;
@@ -175,7 +179,8 @@ void main() {
   fragColor = water;
 }`;
 // The water as broken lines bent by its waves, the dashes drifting with the current, and the sheets as outlined slabs riding them,
-// over the water's tone lit by the lamp.
+// over the water's tone lit by the lamp, or the spheal's sheet alone, on a canvas whose corner lies at origin in the water,
+// lifted by the waves read back under it.
 const OCEAN_DRAW = `
 uniform float scale;
 uniform float density;
@@ -186,6 +191,9 @@ uniform vec3 glow;
 uniform vec2 lamp;
 uniform float scroll;
 uniform float behind;
+uniform bool seat;
+uniform vec2 origin;
+uniform float lift;
 
 // The water's height in line spacings, interpolated smoothly between cells, so the lines bend without kinks, moved up by the
 // cells the water is still behind the page, as it only moves by whole cells.
@@ -201,17 +209,17 @@ float line(float x, float d) {
 }
 
 void main() {
-  vec2 p = gl_FragCoord.xy / scale;
+  vec2 p = origin + gl_FragCoord.xy / scale;
   // Edges further than .02 away all count as .02 away, so far from every sheet nothing is worked out.
   float ice = .02;
   float slab = .02;
-  for (int i = 0; i < ${ICE_SHEETS}; i++) {
+  for (int i = seat ? 0 : 1; i < (seat ? 1 : ${ICE_SHEETS}); i++) {
     // Rides the waves averaged over its size, so larger sheets heave less.
     vec4 sheet = sheets[i];
     // Its edge reaches at most 1.2 sizes from its middle, lifted by the waves at most .1, its slab .01 below that.
     float squash = i == 0 ? float(${SEAT_FLAT}) : 1.;
     if (length((p - sheet.xy) * vec2(1, squash)) - 1.2 * sheet.z > .13 * squash) continue;
-    float heave = height(sheet.xy) + height(sheet.xy + vec2(sheet.z, 0)) + height(sheet.xy - vec2(sheet.z, 0))
+    float heave = seat ? lift : height(sheet.xy) + height(sheet.xy + vec2(sheet.z, 0)) + height(sheet.xy - vec2(sheet.z, 0))
       + height(sheet.xy + vec2(0, sheet.z)) + height(sheet.xy - vec2(0, sheet.z));
     vec2 lifted = p + vec2(0, heave / 5. / float(${OCEAN_LINES}));
     ice = min(ice, edge(lifted, i));
@@ -220,22 +228,28 @@ void main() {
   float y = (p.y - scroll) * float(${OCEAN_LINES}) + height(p);
   float water = line(y, abs(fract(y - .5) - .5)) * step(.35, noise(vec2((p.x - time * float(${OCEAN_CURRENT[0]})) * 8., floor(y + .5))));
   float hidden = min(ice, slab);
-  water *= smoothstep(0., fwidth(hidden), hidden);
-  float ink = float(${OCEAN_INK}) * max(water, max(line(ice, abs(ice)), line(slab, abs(slab)) * step(0., ice)));
+  float open = smoothstep(0., fwidth(hidden), hidden);
+  float ink = float(${OCEAN_INK}) * max(seat ? 0. : water * open, max(line(ice, abs(ice)), line(slab, abs(slab)) * step(0., ice)));
   // Fading out away from the lamp, shaken by up to a step of the 8 bits it ends up in, so it fades without bands.
   float lit = max(0., 1. - length(p - lamp) / float(${OCEAN_GLOW}));
   vec3 lighting = mix(tone, glow, lit) + (hash(gl_FragCoord.xy) - hash(gl_FragCoord.yx)) / 255.;
-  fragColor = vec4(mix(lighting, color, ink), 1);
+  // The spheal's sheet on its own, covering the water where it lies, or the water with all other sheets.
+  fragColor = seat ? vec4(color, 1) * ink + vec4(lighting, 1) * (1. - open) * (1. - ink) : vec4(mix(lighting, color, ink), 1);
 }`;
 
 // Simulates on the gpu and reads the water under each sheet back, so the sheets drift with it, drawn in the canvas' CSS colors,
 // so it follows the theme, lit by the light lightScene moves.
 function drawOcean(light) {
+  // The water, fixed over the window and moved at half the scroll speed by the browser where it can, and the spheal's sheet on
+  // a canvas of its own under the spheal, scrolling with the page, so neither trails the browser's own scrolling.
   let canvas = document.getElementById("ocean");
+  let seatCanvas = document.getElementById("seat");
   let gl = canvas.getContext("webgl2");
+  let seatGl = seatCanvas.getContext("webgl2");
+  let timeline = CSS.supports("animation-timeline: scroll()");
   if (!gl || !gl.getExtension("EXT_color_buffer_float")) return;
 
-  let compile = (source) => {
+  let compile = (gl, source) => {
     let program = gl.createProgram();
     [[gl.VERTEX_SHADER, OCEAN_VERTEX], [gl.FRAGMENT_SHADER, OCEAN_COMMON + source]].forEach(([type, text]) => {
       let shader = gl.createShader(type);
@@ -253,8 +267,10 @@ function drawOcean(light) {
     gl.uniform1i(uniforms.pressure, 1);
     return uniforms;
   };
-  let programs = { water: compile(OCEAN_WATER), divergence: compile(OCEAN_DIVERGENCE), jacobi: compile(OCEAN_JACOBI),
-    project: compile(OCEAN_PROJECT), draw: compile(OCEAN_DRAW) };
+  let programs = { water: compile(gl, OCEAN_WATER), divergence: compile(gl, OCEAN_DIVERGENCE), jacobi: compile(gl, OCEAN_JACOBI),
+    project: compile(gl, OCEAN_PROJECT), draw: compile(gl, OCEAN_DRAW) };
+  let seatDraw = compile(seatGl, OCEAN_DRAW);
+  seatGl.uniform1i(seatDraw.seat, 1);
 
   // The simulation covers the window, each state and pressure twice, as a pass reads one and writes the other.
   let view = [];
@@ -291,9 +307,11 @@ function drawOcean(light) {
     });
     states = [target(gl.RGBA16F), target(gl.RGBA16F)];
     pressures = [target(gl.RG16F), target(gl.RG16F)];
-    gl.useProgram(programs.draw.program);
-    gl.uniform1f(programs.draw.scale, side * density);
-    gl.uniform1f(programs.draw.density, density);
+    [[gl, programs.draw], [seatGl, seatDraw]].forEach(([context, draw]) => {
+      context.useProgram(draw.program);
+      context.uniform1f(draw.scale, side * density);
+      context.uniform1f(draw.density, density);
+    });
     gl.uniform2fv(programs.draw.view, view);
   };
 
@@ -341,21 +359,39 @@ function drawOcean(light) {
   let spawn = (x, y) => sheets.push({ x, y, vx: OCEAN_CURRENT[0], vy: OCEAN_CURRENT[1],
     size: ICE_SIZE_MIN + Math.random() * (ICE_SIZE_MAX - ICE_SIZE_MIN), angle: 2 * Math.PI * Math.random(),
     spin: ICE_SPIN * (2 * Math.random() - 1), sides: 4 + Math.floor(Math.random() * 5), seed: 100 * Math.random() });
-  // The water under each sheet, read back into a buffer the gpu fills in its own time, so reading it never waits for the gpu.
-  let samples = new Float32Array(ICE_SHEETS * 4);
+  // The water under each sheet, and around the spheal's at the five places the waves lift it by, read back into a buffer the gpu
+  // fills in its own time, so reading it never waits for the gpu.
+  let samples = new Float32Array((ICE_SHEETS + 5) * 4);
+  let around = [[0, 0], [1, 0], [-1, 0], [0, 1], [0, -1]];
   gl.bindBuffer(gl.PIXEL_PACK_BUFFER, gl.createBuffer());
   gl.bufferData(gl.PIXEL_PACK_BUFFER, samples.byteLength, gl.STREAM_READ);
   let fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
   let sheetData = new Float32Array(ICE_SHEETS * 4);
   let driftData = new Float32Array(ICE_SHEETS * 4);
   let cellAt = (x, cells) => Math.min(Math.max(Math.floor(x * OCEAN_CELLS), 0), cells - 1);
+  // Seconds since the page last scrolled, and since the last reading: reading back waits on the gpu, which is busy while the
+  // page scrolls, so the sheets keep their speed until the page has rested for OCEAN_REST seconds.
+  let still = 0;
+  let unread = 0;
   // The spheal sits on a larger sheet held in place under it, which scrolls with the page, so through the water at half speed.
   let spheal = document.getElementById("spheal");
   let seat = { angle: .3, sides: 7, seed: 42 };
   let place = {};
+  // Its canvas, on the page around where it can reach: 1.2 sizes sideways, as far up and down as it is flattened, and the most
+  // the waves lift it by, .1, and its slab lies below, .01, with a little room for its outline.
+  let box = {};
   let measure = () => {
     let rect = spheal.getBoundingClientRect();
     place = { x: rect.left + scrollX + .45 * rect.width, y: rect.bottom + scrollY - .1 * rect.height, size: SEAT_WIDTH * rect.width };
+    let side = Math.min(innerWidth, innerHeight);
+    let density = Math.min(devicePixelRatio, OCEAN_DENSITY);
+    let across = 1.2 * place.size + 4;
+    let up = 1.2 * place.size / SEAT_FLAT + .11 * side + 4;
+    box = { left: place.x - across, top: place.y - up, width: 2 * across, height: 2 * up };
+    Object.assign(seatCanvas.style, { left: box.left + "px", top: box.top + "px", width: box.width + "px", height: box.height + "px" });
+    // Only resized when its size changed, as resizing a canvas waits on the gpu, and the page often changes size while scrolling.
+    let size = { width: Math.round(box.width * density), height: Math.round(box.height * density) };
+    if (size.width !== seatCanvas.width || size.height !== seatCanvas.height) Object.assign(seatCanvas, size);
   };
 
   // New sheets drift in from the left, all follow the water under them, the larger ones slower, move up with it as the page
@@ -365,11 +401,16 @@ function drawOcean(light) {
       spawn(-1.2 * ICE_SIZE_MAX, Math.random() * view[1]);
       nextSheet = time + ICE_PAUSE_MIN + Math.random() * (ICE_PAUSE_MAX - ICE_PAUSE_MIN);
     }
-    if (gl.getSyncParameter(fence, gl.SYNC_STATUS) === gl.SIGNALED) {
+    still = scrolled ? 0 : still + elapsed;
+    unread += elapsed;
+    if (still > OCEAN_REST && unread > OCEAN_READ_PAUSE && gl.getSyncParameter(fence, gl.SYNC_STATUS) === gl.SIGNALED) {
+      unread = 0;
       gl.getBufferSubData(gl.PIXEL_PACK_BUFFER, 0, samples);
       gl.deleteSync(fence);
       gl.bindFramebuffer(gl.FRAMEBUFFER, states[0].framebuffer);
       sheets.forEach((sheet, i) => gl.readPixels(cellAt(sheet.x, width), cellAt(sheet.y, height), 1, 1, gl.RGBA, gl.FLOAT, i * 16));
+      around.forEach(([dx, dy], i) => gl.readPixels(cellAt(seat.x + dx * seat.size, width), cellAt(seat.y + dy * seat.size, height),
+        1, 1, gl.RGBA, gl.FLOAT, (ICE_SHEETS + i) * 16));
       fence = gl.fenceSync(gl.SYNC_GPU_COMMANDS_COMPLETE, 0);
     }
     sheets.forEach((sheet, i) => {
@@ -421,9 +462,11 @@ function drawOcean(light) {
   // The lines in the canvas' color, the water in its background color, and the light in its border color.
   let paint = () => {
     let style = getComputedStyle(canvas);
-    gl.useProgram(programs.draw.program);
-    [["color", style.color], ["tone", style.backgroundColor], ["glow", style.borderTopColor]]
-      .forEach(([name, value]) => gl.uniform3fv(programs.draw[name], value.match(/\d+/g).map((c) => c / 255)));
+    [[gl, programs.draw], [seatGl, seatDraw]].forEach(([context, draw]) => {
+      context.useProgram(draw.program);
+      [["color", style.color], ["tone", style.backgroundColor], ["glow", style.borderTopColor]]
+        .forEach(([name, value]) => context.uniform3fv(draw[name], value.match(/\d+/g).map((c) => c / 255)));
+    });
   };
 
   // Steps at a fixed rate whatever the frame rate, catching up at most a tenth of a second.
@@ -447,9 +490,16 @@ function drawOcean(light) {
     gl.uniform2f(programs.draw.lamp, light.x / side, (innerHeight + reach - light.y) / side);
     gl.uniform1f(programs.draw.behind, shift);
     pass(programs.draw, null);
-    // Scrolls with the page, put back over the window as it is drawn, so whatever scrolls the page ahead of the drawing
-    // moves the spheal's sheet along with the spheal.
-    canvas.style.transform = `translateY(${scrollY - reach}px)`;
+    // Put back over the window as it is drawn, undoing the half of this scroll the browser moved it by.
+    canvas.style.translate = `0 ${(timeline ? scrollY / 2 : 0) - reach}px`;
+    seatGl.useProgram(seatDraw.program);
+    seatGl.uniform4fv(seatDraw.sheets, sheetData);
+    seatGl.uniform4fv(seatDraw.drifts, driftData);
+    seatGl.uniform2f(seatDraw.lamp, light.x / side, (innerHeight + reach - light.y) / side);
+    seatGl.uniform1f(seatDraw.lift, around.reduce((sum, point, i) => sum + samples[(ICE_SHEETS + i) * 4 + 2], 0));
+    seatGl.uniform2f(seatDraw.origin, (box.left - scrollX) / side, (innerHeight + reach - box.top - box.height + scrollY) / side);
+    seatGl.viewport(0, 0, seatCanvas.width, seatCanvas.height);
+    seatGl.drawArrays(seatGl.TRIANGLES, 0, 3);
     requestAnimationFrame(frame);
   };
 

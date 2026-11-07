@@ -48,6 +48,19 @@ body {
   font-family: "Roboto";
   text-align: center;
   margin: 0;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* only text can be selected, apart from the name and the links */
+h1, h2, p, li {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+#name p, #links * {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 h1, h2, p, a, li, #dsgvo {

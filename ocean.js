@@ -51,7 +51,7 @@ const ICE_GRIP = .01;
 const ICE_DRAFT = .19;
 const ICE_CALM = .15;
 // The spheal's sheet reaches this many times its width to either side, and is this many times wider than tall.
-const SEAT_WIDTH = .8;
+const SEAT_WIDTH = 1.6;
 const SEAT_FLAT = 2.5;
 // How much of the pointer's speed the water under it takes on per step, how far around it, and how many line spacings
 // deep it pushes the water down, which rises behind it as it moves on.

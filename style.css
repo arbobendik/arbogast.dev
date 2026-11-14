@@ -82,6 +82,10 @@ h1.lit, h2.lit, p.lit, li.lit {
   position: relative;
 }
 
+.note p {
+  text-align: justify;
+}
+
 .echo {
   position: absolute;
   inset: 0;

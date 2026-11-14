@@ -214,14 +214,12 @@ li a {
   align-items: center;
   gap: 2.5rem;
   box-sizing: border-box;
-  padding: max(5vh, min(10vh, 30vh - 20vw)) 2.5% 10vh 10%;
+  padding: max(5vh, min(10vh, 30vh - 20vw)) 10% 10vh;
   min-height: 40vmin;
 }
 
 .subsection:nth-of-type(even) {
   flex-direction: row-reverse;
-  padding-left: 2.5%;
-  padding-right: 10%;
   position: relative;
   isolation: isolate;
   /* how far the section below is blurred, set by onload.js */

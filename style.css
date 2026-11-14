@@ -212,7 +212,7 @@ li a {
 .subsection {
   display: flex;
   align-items: center;
-  gap: 2.5rem;
+  gap: 4rem;
   box-sizing: border-box;
   padding: max(5vh, min(10vh, 30vh - 20vw)) 10% 10vh;
   min-height: 40vmin;
@@ -531,7 +531,7 @@ html[data-theme="dark"] .webIcon::before {
 
 .note {
   flex: none;
-  width: calc(100% - 2.5rem - min(35rem, 80vmin));
+  width: calc(100% - 4rem - min(35rem, 80vmin));
   text-align: left;
 }
 

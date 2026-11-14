@@ -239,10 +239,6 @@ li a {
   padding-top: 7.5rem;
 }
 
-#whoami > div:first-child {
-  margin-bottom: 3rem;
-}
-
 /* stays put as the hover target, so the moving body can't slip out from under the pointer */
 #spheal {
   --width: min(10rem, 30vmin);

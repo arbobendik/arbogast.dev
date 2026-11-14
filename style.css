@@ -531,12 +531,12 @@ html[data-theme="dark"] .webIcon::before {
 
 .note {
   flex: none;
-  width: max(80vmin, 45vw);
+  width: calc(100% - 2.5rem - min(35rem, 80vmin));
   text-align: left;
 }
 
 .subsection > .gallery {
-  flex: 1 1 20rem;
+  flex: none;
   max-width: min(35rem, 80vmin);
 }
 
@@ -552,7 +552,7 @@ html[data-theme="dark"] .webIcon::before {
     padding-right: 0;
   }
 
-  .subsection > .gallery {
+  .note, .subsection > .gallery {
     flex: none;
     width: max(80vmin, 45vw);
     max-width: none;

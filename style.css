@@ -548,6 +548,7 @@ html[data-theme="dark"] .webIcon::before {
 
   .subsection, .subsection:nth-of-type(even) {
     flex-direction: column;
+    gap: 2rem;
     padding-left: 0;
     padding-right: 0;
   }
